@@ -34,7 +34,7 @@ public class ScriptedAgent
 	private Integer enemyUnitId;            // id of the unit our opponent controls (used to lookup UnitView from state)
     private Integer goldResourceNodeId;     // id of one gold deposit in game (used to lookup ResourceView from state)
 
-    private int moveCt = 0;
+    private int moveCount = 0;
 
     /**
      * The constructor for this type. The arguments (including the player number: id of the team we are controlling)
@@ -156,7 +156,7 @@ public class ScriptedAgent
         Integer goldResourceNodeId = null;
         for (Integer resourceId : state.getAllResourceIds()) {
             ResourceView resource = state.getResourceNode(resourceId);
-            if (resource.getType() == ResourceType.GOLD) {
+            if (resource.getType().equals(ResourceType.GOLD)) { // MAKE SURE TO USE equals() NOT == FOR THIS
                 goldResourceNodeId = resourceId;
                 break;
             }
@@ -185,7 +185,31 @@ public class ScriptedAgent
     {
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
 
-        // TODO: your code to give your unit actions for this turn goes here!
+        // Gotta check if enemy is alive. If ded, do nothing.
+        UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
+        if (enemyUnit == null) {
+            return actions;
+        }
+
+        UnitView myUnit = state.getUnit(this.getMyUnitId());
+
+        // Do a check on adjacent tiles. If enemy is there, attack.
+        int dx = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
+        int dy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
+        if (dx <= 1 && dy <= 1) {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
+            return actions;
+        }
+
+        // If not, do simple moving: 6 EAST, 6 NORTH
+        if (moveCount < 7) {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.EAST));
+            moveCount++;
+        } else if (moveCount < 7) {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.NORTH));
+            moveCount++;
+        }
+        
 
         return actions;
 	}
