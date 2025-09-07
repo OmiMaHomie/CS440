@@ -50,9 +50,6 @@ public class ClosestUnitAgent
         this.enemyUnitId = null;
         this.goldResourceNodeId = null;
         this.selectedUnitId = null;
-
-        // helpful printout just to help debug
-		System.out.println("Constructed ClosestUnitAgent");
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
@@ -121,8 +118,74 @@ public class ClosestUnitAgent
 	public Map<Integer, Action> initialStep(StateView state,
                                             HistoryView history)
 	{
-        // TODO: identify units, set fields, and then decide what to do
-		return null;
+        // discover friendly units
+        Set<Integer> myUnitIds = new HashSet<Integer>();
+        for(Integer unitID : state.getUnitIds(this.getPlayerNumber())) {
+            myUnitIds.add(unitID);
+        }
+
+        // check that we have at least one unit
+        if(myUnitIds.size() < 1) {
+            System.err.println("[ERROR] ClosestUnitAgent.initialStep: Should control at least 1 unit");
+            System.exit(-1);
+        }
+
+        // check that all units are footmen
+        for(Integer unitID : myUnitIds) {
+            if(!state.getUnit(unitID).getTemplateView().getName().toLowerCase().equals("footman")) {
+                System.err.println("[ERROR] ClosestUnitAgent.initialStep: Should control only footman units");
+                System.exit(-1);
+            }
+        }
+
+        // check that there is another player and get their player ID
+        Integer[] playerNumbers = state.getPlayerNumbers();
+        if(playerNumbers.length != 2) {
+            System.err.println("ERROR: Should only be two players in the game");
+            System.exit(1);
+        }
+        Integer enemyPlayerNumber = (playerNumbers[0] != this.getPlayerNumber()) ? playerNumbers[0] : playerNumbers[1];
+
+        // get the enemy units
+        Set<Integer> enemyUnitIds = new HashSet<Integer>();
+        for(Integer unitID : state.getUnitIds(enemyPlayerNumber)) {
+            enemyUnitIds.add(unitID);
+        }
+
+        // enemy should have exactly 1 unit
+        if(enemyUnitIds.size() != 1) {
+            System.err.println("[ERROR] ClosestUnitAgent.initialStep: Enemy should control exactly 1 unit");
+            System.exit(-1);
+        }
+
+        // check enemy unit type
+        for(Integer unitID : enemyUnitIds) {
+            if(!state.getUnit(unitID).getTemplateView().getName().toLowerCase().equals("footman")) {
+                System.err.println("[ERROR] ClosestUnitAgent.initialStep: Enemy should only control footman units");
+                System.exit(-1);
+            }
+        }
+
+        // ID gold node
+        Integer goldResourceNodeId = null;
+        for (Integer resourceId : state.getAllResourceIds()) {
+            ResourceView resource = state.getResourceNode(resourceId);
+            if (resource.getType().equals(ResourceType.GOLD)) {
+                goldResourceNodeId = resourceId;
+                break;
+            }
+        }
+
+        // set fields
+        this.setMyUnitIds(myUnitIds);
+        this.setEnemyUnitId(enemyUnitIds.iterator().next());
+        this.setGoldResourceNodeId(goldResourceNodeId);
+
+        // Find and set the closest unit to the enemy
+        Integer closestUnitId = this.findClosestUnitToEnemy(state);
+        this.setSelectedUnitId(closestUnitId);
+
+        return this.middleStep(state, history);
 	}
 
 	@Override
@@ -131,8 +194,54 @@ public class ClosestUnitAgent
     {
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
 
-        // TODO: your code to give your unit actions for this turn goes here!
+        // Check if enemy is alive
+        UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
+        if (enemyUnit == null) {
+            return actions; // Enemy is dead, no actions needed
+        }
 
+        // Recheck closest unit in case units have moved or died
+        Integer selectedUnitId = this.findClosestUnitToEnemy(state);
+        this.setSelectedUnitId(selectedUnitId);
+        
+        if (selectedUnitId == null) {
+            return actions; // No friendly units available
+        }
+
+        UnitView selectedUnit = state.getUnit(selectedUnitId);
+        if (selectedUnit == null) {
+            return actions; // Selected unit died
+        }
+
+        int enemyX = enemyUnit.getXPosition();
+        int enemyY = enemyUnit.getYPosition();
+        int unitX = selectedUnit.getXPosition();
+        int unitY = selectedUnit.getYPosition();
+
+        // Check if unit is adjacent to enemy
+        int dx = Math.abs(unitX - enemyX);
+        int dy = Math.abs(unitY - enemyY);
+        
+        if (dx <= 1 && dy <= 1) {
+            // Attack if adjacent
+            actions.put(selectedUnitId, Action.createPrimitiveAttack(selectedUnitId, this.getEnemyUnitId()));
+            return actions;
+        }
+
+        // Move toward enemy: x-axis first, then y-axis
+        Direction moveDirection = null;
+        
+        if (unitX != enemyX) {
+            moveDirection = getMovementDirection(unitX, unitY, enemyX, unitY);
+        } else {
+            moveDirection = getMovementDirection(unitX, unitY, unitX, enemyY);
+        }
+
+        if (moveDirection != null) {
+            actions.put(selectedUnitId, Action.createPrimitiveMove(selectedUnitId, moveDirection));
+        }
+
+        // Other units do nothing (only the closest unit moves/attacks)
         return actions;
 	}
 
