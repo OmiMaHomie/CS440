@@ -30,11 +30,10 @@ import java.util.Set;
 public class ZigZagAgent
     extends Agent
 {
-
-    // put your fields here! You will probably want to remember the following information:
-    //      - your friendly unit id
-    //      - the enemy unit id
-    //      - the id of the gold
+    private Integer myUnitId;               // ID of THIS unit
+    private Integer enemyUnitId;            // ID of enemy unit
+    private Integer goldResourceNodeId;     // ID of the gold node
+    private boolean lastMoveWasEast;        // Tracks the last move from THIS unit
 
 
     /**
@@ -46,21 +45,112 @@ public class ZigZagAgent
 	{
 		super(playerNum); // make sure to call parent type (Agent)'s constructor!
 
-        // initialize your fields here!
+        this.myUnitId = null;
+        this.enemyUnitId = null;
+        this.goldResourceNodeId = null;
+        this.lastMoveWasEast = false; // Start with east move
 
         // helpful printout just to help debug
 		System.out.println("Constructed ZigZagAgent");
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
+    public final Integer getMyUnitId() { return this.myUnitId; }
+    public final Integer getEnemyUnitId() { return this.enemyUnitId; }
+    public final Integer getGoldResourceNodeId() { return this.goldResourceNodeId; }
+    public final boolean getLastMoveWasEast() { return this.lastMoveWasEast; }
+
+    private void setMyUnitId(Integer i) { this.myUnitId = i; }
+    private void setEnemyUnitId(Integer i) { this.enemyUnitId = i; }
+    private void setGoldResourceNodeId(Integer i) { this.goldResourceNodeId = i; }
+    private void setLastMoveWasEast(boolean b) { this.lastMoveWasEast = b; }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	@Override
 	public Map<Integer, Action> initialStep(StateView state,
                                             HistoryView history)
 	{
-        // TODO: identify units, set fields, and then decide what to do
-		return null;
+		// Find the friendly units
+        Set<Integer> myUnitIds = new HashSet<Integer>();
+        for(Integer unitID : state.getUnitIds(this.getPlayerNumber())) // for each unit on my team
+        {
+            myUnitIds.add(unitID);
+        }
+
+        // Make sure we only controlling 1 unit
+        if(myUnitIds.size() != 1)
+        {
+            System.err.println("[ERROR] ZigZagAgent.initialStep: Should control only 1 unit");
+            System.exit(-1);
+        }
+
+        // Checking that friendly units are of right type (footman or melee)
+        for(Integer unitID : myUnitIds)
+        {
+            if(!state.getUnit(unitID).getTemplateView().getName().toLowerCase().equals("footman"))
+            {
+                System.err.println("[ERROR] ZigZagAgent.initialStep: Should control only footman units");
+                System.exit(-1);
+            }
+        }
+
+        // Checking other players and saving their IDs
+        Integer[] playerNumbers = state.getPlayerNumbers();
+        if(playerNumbers.length != 2)
+        {
+            System.err.println("ERROR: Should only be two players in the game");
+            System.exit(1);
+        }
+        Integer enemyPlayerNumber = null;
+        if(playerNumbers[0] != this.getPlayerNumber())
+        {
+            enemyPlayerNumber = playerNumbers[0];
+        } else
+        {
+            enemyPlayerNumber = playerNumbers[1];
+        }
+
+        // Same as last batch but now for enemy IDs
+        Set<Integer> enemyUnitIds = new HashSet<Integer>();
+        for(Integer unitID : state.getUnitIds(enemyPlayerNumber))
+        {
+            enemyUnitIds.add(unitID);
+        }
+
+        // Making sure only 1 enemy
+        if(enemyUnitIds.size() != 1)
+        {
+            System.err.println("[ERROR] ZigZagAgent.initialStep: Enemy should control only 1 unit");
+            System.exit(-1);
+        }
+
+        // Checking enemy type
+        for(Integer unitID : enemyUnitIds)
+        {
+            if(!state.getUnit(unitID).getTemplateView().getName().toLowerCase().equals("footman"))
+            {
+                System.err.println("[ERROR] ZigZagAgent.initialStep: Enemy should only control footman units");
+                System.exit(-1);
+            }
+        }
+
+        // Locate and ID the gold
+        Integer goldResourceNodeId = null;
+        for (Integer resourceId : state.getAllResourceIds()) {
+            ResourceView resource = state.getResourceNode(resourceId);
+            if (resource.getType().equals(ResourceType.GOLD)) {
+                goldResourceNodeId = resourceId;
+                break;
+            }
+        }
+
+        // Setting fields
+        this.setMyUnitId(myUnitIds.iterator().next());
+        this.setEnemyUnitId(enemyUnitIds.iterator().next());
+        this.setGoldResourceNodeId(goldResourceNodeId);
+
+        // Call to middlestep
+        return this.middleStep(state, history);
 	}
 
 	@Override
@@ -69,7 +159,31 @@ public class ZigZagAgent
     {
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
 
-        // TODO: your code to give your unit actions for this turn goes here!
+        // Check if enemy is alive. If dead, do nothing.
+        UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
+        if (enemyUnit == null) {
+            return actions;
+        }
+
+        UnitView myUnit = state.getUnit(this.getMyUnitId());
+
+        // Check if enemy is adjacent - if so, attack
+        int dx = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
+        int dy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
+        
+        if (dx <= 1 && dy <= 1) {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
+            return actions;
+        }
+
+        // Zig-zag to enemy
+        if (this.getLastMoveWasEast()) {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.NORTH));
+            this.setLastMoveWasEast(false);
+        } else {
+            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.EAST));
+            this.setLastMoveWasEast(true);
+        }
 
         return actions;
 	}
