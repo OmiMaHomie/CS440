@@ -30,10 +30,10 @@ public class ClosestUnitAgent
     extends Agent
 {
 
-    // put your fields here! You will probably want to remember the following information:
-    //      - all friendly unit ids (there may be more than one!)
-    //      - the enemy unit id
-    //      - the id of the gold
+    private Set<Integer> myUnitIds;         // THIS unit IDs
+    private Integer enemyUnitId;            // Enmy unit ID
+    private Integer goldResourceNodeId;     // Gold node ID
+    private Integer selectedUnitId;         // Selected unit ID
 
 
     /**
@@ -46,13 +46,76 @@ public class ClosestUnitAgent
 		super(playerNum); // make sure to call parent type (Agent)'s constructor!
 
         // initialize your fields here!
+        this.myUnitIds = new HashSet<Integer>();
+        this.enemyUnitId = null;
+        this.goldResourceNodeId = null;
+        this.selectedUnitId = null;
 
         // helpful printout just to help debug
 		System.out.println("Constructed ClosestUnitAgent");
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
+    public final Set<Integer> getMyUnitIds() { return this.myUnitIds; }
+    public final Integer getEnemyUnitId() { return this.enemyUnitId; }
+    public final Integer getGoldResourceNodeId() { return this.goldResourceNodeId; }
+    public final Integer getSelectedUnitId() { return this.selectedUnitId; }
+
+    private void setMyUnitIds(Set<Integer> ids) { this.myUnitIds = ids; }
+    private void setEnemyUnitId(Integer id) { this.enemyUnitId = id; }
+    private void setGoldResourceNodeId(Integer id) { this.goldResourceNodeId = id; }
+    private void setSelectedUnitId(Integer id) { this.selectedUnitId = id; }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // Gets the distance between players x and y
+    private double calculateDistance(int x1, int y1, int x2, int y2) {
+        return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+    }
+
+    // Determins the closest friendly player
+    private Integer findClosestUnitToEnemy(StateView state) {
+        UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
+        if (enemyUnit == null) {
+            return null;
+        }
+
+        int enemyX = enemyUnit.getXPosition();
+        int enemyY = enemyUnit.getYPosition();
+        
+        Integer closestUnitId = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (Integer unitId : this.getMyUnitIds()) {
+            UnitView friendlyUnit = state.getUnit(unitId);
+            if (friendlyUnit != null) {
+                double distance = calculateDistance(
+                    friendlyUnit.getXPosition(), friendlyUnit.getYPosition(),
+                    enemyX, enemyY
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestUnitId = unitId;
+                }
+            }
+        }
+
+        return closestUnitId;
+    }
+
+    // Determine the way to move
+    private Direction getMovementDirection(int currentX, int currentY, int targetX, int targetY) {
+        if (currentX < targetX) {
+            return Direction.EAST;
+        } else if (currentX > targetX) {
+            return Direction.WEST;
+        } else if (currentY < targetY) {
+            return Direction.SOUTH;
+        } else if (currentY > targetY) {
+            return Direction.NORTH;
+        }
+        return null; // Already at target position
+    }
 
 	@Override
 	public Map<Integer, Action> initialStep(StateView state,

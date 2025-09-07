@@ -1,4 +1,3 @@
-
 package src.labs.scripted.agents;
 
 
@@ -49,9 +48,6 @@ public class ZigZagAgent
         this.enemyUnitId = null;
         this.goldResourceNodeId = null;
         this.lastMoveWasEast = false; // Start with east move
-
-        // helpful printout just to help debug
-		System.out.println("Constructed ZigZagAgent");
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
