@@ -34,8 +34,6 @@ public class ScriptedAgent
 	private Integer enemyUnitId;            // id of the unit our opponent controls (used to lookup UnitView from state)
     private Integer goldResourceNodeId;     // id of one gold deposit in game (used to lookup ResourceView from state)
 
-    private int moveCount = 0;
-
     /**
      * The constructor for this type. The arguments (including the player number: id of the team we are controlling)
      * are contained within the game's xml file that we are running. We can also add extra arguments to the game's xml
@@ -196,20 +194,19 @@ public class ScriptedAgent
         // Do a check on adjacent tiles. If enemy is there, attack.
         int dx = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
         int dy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
+        System.out.println("init different: " + dx + " " + dy);
         if (dx <= 1 && dy <= 1) {
             actions.put(this.getMyUnitId(), Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
             return actions;
         }
 
         // If not, do simple moving: 6 EAST, 6 NORTH
-        if (moveCount < 7) {
+        if (dx > 1) {
             actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.EAST));
-            moveCount++;
-        } else if (moveCount < 7) {
+        } else if (dy > 1) {
             actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.NORTH));
-            moveCount++;
-        }
-        
+        }      
+        System.out.println("post different: " + dx + " " + dy);  
 
         return actions;
 	}
