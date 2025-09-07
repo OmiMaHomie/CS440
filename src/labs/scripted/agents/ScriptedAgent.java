@@ -23,7 +23,7 @@ import java.util.Set;
 
 
 // JAVA PROJECT IMPORTS
-
+import java.lang.System;
 
 
 public class ScriptedAgent
@@ -33,6 +33,7 @@ public class ScriptedAgent
 	private Integer myUnitId;               // id of the unit we control (used to lookop UnitView from state)
 	private Integer enemyUnitId;            // id of the unit our opponent controls (used to lookup UnitView from state)
     private Integer goldResourceNodeId;     // id of one gold deposit in game (used to lookup ResourceView from state)
+    private boolean goldGathered;           // Tracks if gold has been gathered
 
     /**
      * The constructor for this type. The arguments (including the player number: id of the team we are controlling)
@@ -50,20 +51,40 @@ public class ScriptedAgent
         this.myUnitId = null;
         this.enemyUnitId = null;
         this.goldResourceNodeId = null;
-
-        // helpful printout just to help debug
-		System.out.println("Constructed ScriptedAgent");
+        this.goldGathered = false;
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
 	public final Integer getMyUnitId() { return this.myUnitId; }
-	public final Integer getEnemyUnitId() { return this.enemyUnitId; }
-    public final Integer getGoldResourceNodeId() { return this.goldResourceNodeId; }
+    public final Integer getEnemyUnitId() { return this.enemyUnitId; }
+    public final Integer getGoldResourceNodeId() { 
+        if (this.goldResourceNodeId == null) {
+            return 0;
+        } else {
+            return this.goldResourceNodeId;
+        }
+     }
+    public final boolean isGoldGathered() { return this.goldGathered; }
 
     private void setMyUnitId(Integer i) { this.myUnitId = i; }
     private void setEnemyUnitId(Integer i) { this.enemyUnitId = i; }
     private void setGoldResourceNodeId(Integer i) { this.goldResourceNodeId = i; }
+    private void setGoldGathered(boolean b) { this.goldGathered = b; }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    // Just copied movement logic from ClosestUnitAgent.Java
+    private Direction getMovementDirection(int currentX, int currentY, int targetX, int targetY) {
+        if (currentX < targetX) {
+            return Direction.EAST;
+        } else if (currentX > targetX) {
+            return Direction.WEST;
+        } else if (currentY < targetY) {
+            return Direction.SOUTH;
+        } else if (currentY > targetY) {
+            return Direction.NORTH;
+        }
+        return null; // Already at target position
+    }
 
     /**
      * Agents in Sepia have five abstract methods that we must override. The first three are the most important:
@@ -84,7 +105,6 @@ public class ScriptedAgent
 	public Map<Integer, Action> initialStep(StateView state,
                                             HistoryView history)
 	{
-
 		// discover friendly units
         Set<Integer> myUnitIds = new HashSet<Integer>();
 		for(Integer unitID : state.getUnitIds(this.getPlayerNumber())) // for each unit on my team
@@ -150,24 +170,13 @@ public class ScriptedAgent
             }
         }
 
-        // Discover where gold is at
-        Integer goldResourceNodeId = null;
-        for (Integer resourceId : state.getAllResourceIds()) {
-            ResourceView resource = state.getResourceNode(resourceId);
-            if (resource.getType().equals(ResourceType.GOLD)) { // MAKE SURE TO USE equals() NOT == FOR THIS
-                goldResourceNodeId = resourceId;
-                break;
-            }
-        }
-
         // set our fields
         this.setMyUnitId(myUnitIds.iterator().next());
         this.setEnemyUnitId(enemyUnitIds.iterator().next());
         this.setGoldResourceNodeId(goldResourceNodeId);
 
-        // ask middlestep what actions each unit should do. Unless we need the units to do something very specific
-        // on the first turn of the game, we typically put all "action logic" in middlestep and call it from here.
-		return this.middleStep(state, history);
+        // ask middlestep what actions each unit should do
+        return this.middleStep(state, history);
 	}
 
     /**
@@ -183,33 +192,39 @@ public class ScriptedAgent
     {
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
 
-        // Gotta check if enemy is alive. If ded, do nothing.
+        // Check if enemy alive.
         UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
         if (enemyUnit == null) {
             return actions;
         }
 
         UnitView myUnit = state.getUnit(this.getMyUnitId());
+        ResourceView goldResource = state.getResourceNode(this.getGoldResourceNodeId());
 
-        // Do a check on adjacent tiles. If enemy is there, attack.
-        int dx = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
-        int dy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
-        System.out.println("init different: " + dx + " " + dy);
-        if (dx <= 1 && dy <= 1) {
-            actions.put(this.getMyUnitId(), Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
+        // check if adjacent
+        int dxToEnemy = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
+        int dyToEnemy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
+        
+        if (dxToEnemy <= 1 && dyToEnemy <= 1) {
+            actions.put(this.getMyUnitId(), 
+                Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
             return actions;
         }
 
-        // If not, do simple moving: 6 EAST, 6 NORTH
-        if (dx > 1) {
-            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.EAST));
-        } else if (dy > 1) {
-            actions.put(this.getMyUnitId(), Action.createPrimitiveMove(this.getMyUnitId(), Direction.NORTH));
-        }      
-        System.out.println("post different: " + dx + " " + dy);  
+        // Move to enemy
+        int enemyX = enemyUnit.getXPosition();
+        int enemyY = enemyUnit.getYPosition();
+        int myX = myUnit.getXPosition();
+        int myY = myUnit.getYPosition();
+        
+        Direction moveDirection = getMovementDirection(myX, myY, enemyX, enemyY);
+        if (moveDirection != null) {
+            actions.put(this.getMyUnitId(), 
+                Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+        }
 
         return actions;
-	}
+    }
 
     /**
      * Finally, when the game ends, Sepia will call this method automatically for you. This method is traditionally

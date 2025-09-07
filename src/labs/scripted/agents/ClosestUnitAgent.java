@@ -30,7 +30,7 @@ public class ClosestUnitAgent
     extends Agent
 {
 
-    private Set<Integer> myUnitIds;         // THIS unit IDs
+    private Set<Integer> myUnitIds;         // Friendly unit IDs
     private Integer enemyUnitId;            // Enmy unit ID
     private Integer goldResourceNodeId;     // Gold node ID
     private Integer selectedUnitId;         // Selected unit ID

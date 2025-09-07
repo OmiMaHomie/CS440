@@ -2,7 +2,7 @@
 	<Map>data/labs/scripted/oneUnitMap.xml</Map>
 	<Player Id="0">
 		<AgentClass>
-			<ClassName>src.labs.scripted.agents.ZigZagAgent</ClassName>
+			<ClassName>src.labs.scripted.agents.ScriptedAgent</ClassName>
 			<Argument>0</Argument>
 		</AgentClass>
 	</Player>
