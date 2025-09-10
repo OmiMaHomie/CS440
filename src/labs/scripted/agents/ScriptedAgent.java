@@ -182,10 +182,10 @@ public class ScriptedAgent
         if (!goldNodeIds.isEmpty()) {
             goldNodeId = goldNodeIds.get(0);
             this.set_isMovingToGold(true);
-        }
-        if (goldNodeId == null) {
-            System.err.println("[ERROR] ScriptedAgent.initialStep: No gold resource found");
-            System.exit(-1);
+            this.set_isGoldGathered(false);;
+        }else {
+            this.set_isMovingToGold(false);
+            this.set_isGoldGathered(true);
         }
 
         System.out.println(goldNodeId);
@@ -194,8 +194,9 @@ public class ScriptedAgent
         this.setMyUnitId(myUnitIds.iterator().next());
         this.setEnemyUnitId(enemyUnitIds.iterator().next());
         this.setGoldResourceNodeId(goldNodeId);
+        // isMovingToGold & isGoldGathered alr set.
 
-        // ask middlestep what actions each unit should do
+        // call middleStep
         return this.middleStep(state, history);
 	}
 
@@ -220,7 +221,6 @@ public class ScriptedAgent
 
         UnitView myUnit = state.getUnit(this.getMyUnitId());
         ResourceView goldResource = state.getResourceNode(this.getGoldResourceNodeId());
-        System.out.println(goldResource.toString());
 
         // If gold is already gathered, proceed to attack enemy
         if (this.getIsGoldGathered()) {
@@ -251,11 +251,13 @@ public class ScriptedAgent
             return actions;
         }
 
-        // If we're still moving to gold or gathering gold
-        if (this.getIsMovingToGold()) {
-            // Check if gold resource still exists
+        // If T, we need to focus on going/gather gold.
+        if (!this.getIsGoldGathered()) {
+            // If F, then we've collected the gold.
             if (goldResource == null || goldResource.getAmountRemaining() <= 0) {
+                
                 System.out.println("done collecting");
+                
                 this.set_isGoldGathered(true);
                 this.set_isMovingToGold(false);
                 return actions;
@@ -263,11 +265,10 @@ public class ScriptedAgent
 
             // Check if adjacent to gold
             int dxToGold = Math.abs(myUnit.getXPosition() - goldResource.getXPosition());
-            int dyToGold = Math.abs(myUnit.getYPosition() - goldResource.getYPosition());
-            System.out.println(dxToGold + " | " + dyToGold);
-            
+            int dyToGold = Math.abs(myUnit.getYPosition() - goldResource.getYPosition());        
+
+            // T, gather gold
             if (dxToGold <= 1 && dyToGold <= 1) {
-                // Adjacent to gold, start gathering
                 Direction dirToGold = null;
 
                 if (dxToGold == 1 && dyToGold == 0) {
@@ -275,26 +276,31 @@ public class ScriptedAgent
                 } else if (dxToGold == -1 && dyToGold == 0) {
                     dirToGold = Direction.WEST;
                 } else if (dxToGold == 0 && dyToGold == 1) {
-                    dirToGold = Direction.SOUTH;
-                } else if (dxToGold == 0 && dyToGold == -1) {
                     dirToGold = Direction.NORTH;
+                } else {
+                    dirToGold = Direction.SOUTH;
                 }
 
                 actions.put(this.getMyUnitId(), 
                     Action.createPrimitiveGather(this.getMyUnitId(), dirToGold));
-                return actions;
-            }
 
-            // Move to gold
-            int goldX = goldResource.getXPosition();
-            int goldY = goldResource.getYPosition();
-            int myX = myUnit.getXPosition();
-            int myY = myUnit.getYPosition();
-            
-            Direction moveDirection = getMovementDirection(myX, myY, goldX, goldY);
-            if (moveDirection != null) {
-                actions.put(this.getMyUnitId(), 
-                    Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+                System.out.println("collecting " + dirToGold.toString());
+                return actions;
+            } // F, move to gold
+            else
+            {
+                int goldX = goldResource.getXPosition();
+                int goldY = goldResource.getYPosition();
+                int myX = myUnit.getXPosition();
+                int myY = myUnit.getYPosition();
+                Direction moveDirection = getMovementDirection(myX, myY, goldX, goldY);
+
+                if (moveDirection != null) {
+                    actions.put(this.getMyUnitId(), 
+                        Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+                }
+
+                System.out.println("moving to gold");
             }
         }
 
@@ -324,5 +330,5 @@ public class ScriptedAgent
 
 	@Override
 	public void savePlayerData(OutputStream os) {}
-    
+
 }
