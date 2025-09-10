@@ -1,0 +1,6 @@
+javac --% -cp ./lib/*;. @scripted.srcs
+java --% -cp ./lib/*;. edu.cwru.sepia.Main2 data/labs/scripted/oneUnitGame.xml
+
+Do note that:
+Line 1, we may change @scripted.srcs
+Line 2, we may need to both change the path AND the config settings

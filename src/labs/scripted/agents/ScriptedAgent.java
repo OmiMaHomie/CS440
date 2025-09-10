@@ -24,6 +24,8 @@ import java.util.Set;
 
 // JAVA PROJECT IMPORTS
 import java.lang.System;
+import java.util.List;
+import java.util.ArrayList;
 
 
 public class ScriptedAgent
@@ -33,7 +35,8 @@ public class ScriptedAgent
 	private Integer myUnitId;               // id of the unit we control (used to lookop UnitView from state)
 	private Integer enemyUnitId;            // id of the unit our opponent controls (used to lookup UnitView from state)
     private Integer goldResourceNodeId;     // id of one gold deposit in game (used to lookup ResourceView from state)
-    private boolean goldGathered;           // Tracks if gold has been gathered
+    private boolean isGoldGathered;         // Tracks if gold has been gathered
+    private boolean isMovingToGold;         // Tracks if we're focusing on gold
 
     /**
      * The constructor for this type. The arguments (including the player number: id of the team we are controlling)
@@ -51,7 +54,8 @@ public class ScriptedAgent
         this.myUnitId = null;
         this.enemyUnitId = null;
         this.goldResourceNodeId = null;
-        this.goldGathered = false;
+        this.isGoldGathered = false;
+        this.isMovingToGold = false;
 	}
 
     /////////////////////////////// GETTERS AND SETTERS (this is Java after all) ///////////////////////////////
@@ -64,12 +68,14 @@ public class ScriptedAgent
             return this.goldResourceNodeId;
         }
      }
-    public final boolean isGoldGathered() { return this.goldGathered; }
+    public final boolean getIsGoldGathered() { return this.isGoldGathered; }
+    public final boolean getIsMovingToGold() { return this.isMovingToGold; }
 
     private void setMyUnitId(Integer i) { this.myUnitId = i; }
     private void setEnemyUnitId(Integer i) { this.enemyUnitId = i; }
     private void setGoldResourceNodeId(Integer i) { this.goldResourceNodeId = i; }
-    private void setGoldGathered(boolean b) { this.goldGathered = b; }
+    private void set_isGoldGathered(boolean b) { this.isGoldGathered = b; }
+    private void set_isMovingToGold(boolean b) { this.isMovingToGold = b; }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     // Just copied movement logic from ClosestUnitAgent.Java
@@ -170,10 +176,23 @@ public class ScriptedAgent
             }
         }
 
+        // Find the gold node
+        List<Integer> goldNodeIds = state.getResourceNodeIds(ResourceNode.Type.GOLD_MINE);
+
+        Integer goldNodeId = null;
+        if (!goldNodeIds.isEmpty()) {
+            goldNodeId = goldNodeIds.get(0);
+        }
+
+        if (goldNodeId == null) {
+            System.err.println("[ERROR] ScriptedAgent.initialStep: No gold resource found");
+            System.exit(-1);
+        }
+
         // set our fields
         this.setMyUnitId(myUnitIds.iterator().next());
         this.setEnemyUnitId(enemyUnitIds.iterator().next());
-        this.setGoldResourceNodeId(goldResourceNodeId);
+        this.setGoldResourceNodeId(goldNodeId);
 
         // ask middlestep what actions each unit should do
         return this.middleStep(state, history);
@@ -195,32 +214,85 @@ public class ScriptedAgent
         // Check if enemy alive.
         UnitView enemyUnit = state.getUnit(this.getEnemyUnitId());
         if (enemyUnit == null) {
-            return actions;
+            return actions; // Enemy is dead, game should end soon
         }
 
         UnitView myUnit = state.getUnit(this.getMyUnitId());
         ResourceView goldResource = state.getResourceNode(this.getGoldResourceNodeId());
 
-        // check if adjacent
-        int dxToEnemy = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
-        int dyToEnemy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
-        
-        if (dxToEnemy <= 1 && dyToEnemy <= 1) {
-            actions.put(this.getMyUnitId(), 
-                Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
+        // If gold is already gathered, proceed to attack enemy
+        if (this.getIsGoldGathered()) {
+            this.set_isMovingToGold(false);
+            
+            // Check if adjacent to enemy
+            int dxToEnemy = Math.abs(myUnit.getXPosition() - enemyUnit.getXPosition());
+            int dyToEnemy = Math.abs(myUnit.getYPosition() - enemyUnit.getYPosition());
+            
+            if (dxToEnemy <= 1 && dyToEnemy <= 1) {
+                actions.put(this.getMyUnitId(), 
+                    Action.createPrimitiveAttack(this.getMyUnitId(), this.getEnemyUnitId()));
+                return actions;
+            }
+
+            // Move to enemy
+            int enemyX = enemyUnit.getXPosition();
+            int enemyY = enemyUnit.getYPosition();
+            int myX = myUnit.getXPosition();
+            int myY = myUnit.getYPosition();
+            
+            Direction moveDirection = getMovementDirection(myX, myY, enemyX, enemyY);
+            if (moveDirection != null) {
+                actions.put(this.getMyUnitId(), 
+                    Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+            }
+            
             return actions;
         }
 
-        // Move to enemy
-        int enemyX = enemyUnit.getXPosition();
-        int enemyY = enemyUnit.getYPosition();
-        int myX = myUnit.getXPosition();
-        int myY = myUnit.getYPosition();
-        
-        Direction moveDirection = getMovementDirection(myX, myY, enemyX, enemyY);
-        if (moveDirection != null) {
-            actions.put(this.getMyUnitId(), 
-                Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+        // If we're still moving to gold or gathering gold
+        if (this.getIsMovingToGold()) {
+            // Check if gold resource still exists
+            if (goldResource == null || goldResource.getAmountRemaining() <= 0) {
+                this.set_isGoldGathered(true);
+                this.set_isMovingToGold(false);
+//                return this.middleStep(state, history); // Recursively call to attack enemy
+                return actions;
+            }
+
+            // Check if adjacent to gold
+            int dxToGold = Math.abs(myUnit.getXPosition() - goldResource.getXPosition());
+            int dyToGold = Math.abs(myUnit.getYPosition() - goldResource.getYPosition());
+            
+            if (dxToGold <= 1 && dyToGold <= 1) {
+                // Adjacent to gold, start gathering
+                Direction dirToGold = null;
+
+                if (dxToGold == 1 && dyToGold == 0) {
+                    dirToGold = Direction.EAST;
+                } else if (dxToGold == -1 && dyToGold == 0) {
+                    dirToGold = Direction.WEST;
+                } else if (dxToGold == 0 && dyToGold == 1) {
+                    dirToGold = Direction.SOUTH;
+                } else if (dxToGold == 0 && dyToGold == -1) {
+                    dirToGold = Direction.NORTH;
+                }
+
+                actions.put(this.getMyUnitId(), 
+                    Action.createPrimitiveGather(this.getMyUnitId(), dirToGold));
+                return actions;
+            }
+
+            // Move to gold
+            int goldX = goldResource.getXPosition();
+            int goldY = goldResource.getYPosition();
+            int myX = myUnit.getXPosition();
+            int myY = myUnit.getYPosition();
+            
+            Direction moveDirection = getMovementDirection(myX, myY, goldX, goldY);
+            if (moveDirection != null) {
+                actions.put(this.getMyUnitId(), 
+                    Action.createPrimitiveMove(this.getMyUnitId(), moveDirection));
+            }
         }
 
         return actions;
@@ -251,4 +323,3 @@ public class ScriptedAgent
 	public void savePlayerData(OutputStream os) {}
 
 }
-

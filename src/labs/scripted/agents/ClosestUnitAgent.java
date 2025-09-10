@@ -142,7 +142,7 @@ public class ClosestUnitAgent
         Integer[] playerNumbers = state.getPlayerNumbers();
         if(playerNumbers.length != 2) {
             System.err.println("ERROR: Should only be two players in the game");
-            System.exit(1);
+            System.exit(-1);
         }
         Integer enemyPlayerNumber = (playerNumbers[0] != this.getPlayerNumber()) ? playerNumbers[0] : playerNumbers[1];
 
