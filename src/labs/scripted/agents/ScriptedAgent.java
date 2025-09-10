@@ -178,16 +178,17 @@ public class ScriptedAgent
 
         // Find the gold node
         List<Integer> goldNodeIds = state.getResourceNodeIds(ResourceNode.Type.GOLD_MINE);
-
         Integer goldNodeId = null;
         if (!goldNodeIds.isEmpty()) {
             goldNodeId = goldNodeIds.get(0);
+            this.set_isMovingToGold(true);
         }
-
         if (goldNodeId == null) {
             System.err.println("[ERROR] ScriptedAgent.initialStep: No gold resource found");
             System.exit(-1);
         }
+
+        System.out.println(goldNodeId);
 
         // set our fields
         this.setMyUnitId(myUnitIds.iterator().next());
@@ -219,6 +220,7 @@ public class ScriptedAgent
 
         UnitView myUnit = state.getUnit(this.getMyUnitId());
         ResourceView goldResource = state.getResourceNode(this.getGoldResourceNodeId());
+        System.out.println(goldResource.toString());
 
         // If gold is already gathered, proceed to attack enemy
         if (this.getIsGoldGathered()) {
@@ -253,15 +255,16 @@ public class ScriptedAgent
         if (this.getIsMovingToGold()) {
             // Check if gold resource still exists
             if (goldResource == null || goldResource.getAmountRemaining() <= 0) {
+                System.out.println("done collecting");
                 this.set_isGoldGathered(true);
                 this.set_isMovingToGold(false);
-//                return this.middleStep(state, history); // Recursively call to attack enemy
                 return actions;
             }
 
             // Check if adjacent to gold
             int dxToGold = Math.abs(myUnit.getXPosition() - goldResource.getXPosition());
             int dyToGold = Math.abs(myUnit.getYPosition() - goldResource.getYPosition());
+            System.out.println(dxToGold + " | " + dyToGold);
             
             if (dxToGold <= 1 && dyToGold <= 1) {
                 // Adjacent to gold, start gathering
@@ -321,5 +324,5 @@ public class ScriptedAgent
 
 	@Override
 	public void savePlayerData(OutputStream os) {}
-
+    
 }
