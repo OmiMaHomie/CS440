@@ -1,0 +1,207 @@
+\documentclass[11pt]{article}
+
+%\usepackage{geometry}
+\usepackage[paper=a4paper, 
+            left=20.0mm, right=20.0mm, 
+            top=25.0mm, bottom=25.0mm]{geometry}
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{fancyhdr, lastpage, bbding, pmboxdraw}
+\usepackage[usenames,dvipsnames]{xcolor}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\definecolor{darkred}{rgb}{.7,0,0}
+\definecolor{darkgreen}{rgb}{0,.6,0}
+\definecolor{red}{rgb}{.98,0,0}
+\usepackage[colorlinks,pagebackref,pdfusetitle,urlcolor=darkblue,citecolor=darkblue,linkcolor=darkred,bookmarksnumbered,plainpages=false]{hyperref}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{ \fancyplain{}{CS 440: Artificial Intelligence} }
+%\chead{ \fancyplain{}{} }
+\rhead{ \fancyplain{}{\today} }
+\rfoot{\fancyplain{}{page \thepage\ of \pageref{LastPage}}}
+% \fancyfoot[RO, LE] {Page \thepage\ of \textcolor{black}{\pageref{LastPage}} }
+\thispagestyle{plain}
+
+%%%%%%%%%%%% LISTING %%%
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\usepackage{verbatim} % used to display code
+\usepackage{fancyvrb}
+\usepackage{acronym}
+\usepackage{amsthm, amsmath}
+\usepackage{tikz}
+    \usetikzlibrary{calc, arrows, arrows.meta, positioning}
+\usepackage{amsmath, amssymb}
+
+\VerbatimFootnotes % Required, otherwise verbatim does not work in footnotes!
+
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.93}
+
+\lstset{
+	%language=bash,                          % Code langugage
+	basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+	keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+	commentstyle=\color{gray},              % Comments font
+	numbers=left,                           % Line nums position
+	numberstyle=\tiny,                      % Line-numbers fonts
+	stepnumber=1,                           % Step between two line-numbers
+	numbersep=5pt,                          % How far are line-numbers from code
+	backgroundcolor=\color{lightlightgray}, % Choose background color
+	frame=none,                             % A frame around the code
+	tabsize=2,                              % Default tab size
+	captionpos=t,                           % Caption-position = bottom
+	breaklines=true,                        % Automatic line breaking?
+	breakatwhitespace=false,                % Automatic breaks only at whitespace?
+	showspaces=false,                       % Dont make spaces visible
+	showtabs=false,                         % Dont make tabls visible
+	columns=flexible,                       % Column format
+	morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+\newcommand{\task}[1]{\section*{\normalsize #1}}
+% \newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+% \newcommand{\extraspace}[]{
+%     \begin{center}
+%         \textbf{Use this page for extra space.}
+%     \end{center}
+% }
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+\begin{center}
+    {\Large \textsc{Example Proofs}}
+\end{center}
+
+\task{1 Representatives of points}
+
+
+\subsection*{1.1 $L_2$-distance optimum}
+Consider a set of $d$-dimensional points $X=\{x_1,\ldots , x_n\}$ and distance function 
+$$ D_2(x_i,x_j) = \sum_{\ell=1}^d\left(x_i(\ell)-x_j(\ell)\right)^2.$$ Show that the representative 
+$$
+x^\ast = \arg\min_{x\in \mathbb{R}^d}\sum_{x_i\in X}D_2(x_i,x)
+$$
+is the mean of the points in $X$. That is, for every $\ell\in\{1,\ldots ,d\}$
+$x^\ast(\ell)=\frac{1}{n}\sum_{i=1}^n x_i(\ell)$.\newline\newline
+
+\noindent\textbf{Answer}
+We can differentiate this function and find its optimum. Since this function is convex up, it only has a minimum:
+
+\begin{align*}
+\sum\limits_{i=1}^n D_2(x_i,y) &= \sum\limits_{i=1}^n \sum\limits_{l=1}^d (x_{il} - y_l)^2 &\text{assumption}\\
+\frac{\partial D_2}{y_j} &= \frac{\partial}{\partial y_j} \sum\limits_{i=1}^n \sum\limits_{l=1}^d (x_{il} - y_l)^2 &\text{differentiating both sides}\\
+  &= \sum\limits_{i=1}^n \frac{\partial}{\partial y_j}\sum\limits_{l} (x_{il} - y_l)^2 &\text{distribute derivative operator}\\
+  &= \sum\limits_{i=1}^n \frac{\partial}{\partial y_j} (x_{ij} - y_j)^2 &\text{when }l\neq j\text{ derivative is 0}\\
+0 &= \sum\limits_{i=1}^n 2(y_j - x_{ij}) &\text{derivative and setting derivative to 0}\\
+\sum\limits_{i=1}^n x_{ij} &= \sum\limits_{i=1}^n y_j &\text{algebra}\\
+\sum\limits_{i=1}^n x_{ij} &= ny_j &\sum\limits_{i=1}^n 1 = n\\
+\frac{1}{n}\sum\limits_{i=1}^n x_{ij} &= y_j &\text{solving}
+\end{align*}
+
+Since each element of $y$ is independent from each other, this result stands for every element of $y$. Therefore, the optimal representative is the vector mean of all the points.\newpage
+
+\subsection*{1.2 $L_1$-distance optimum} 
+Consider a set of $d$-dimensional points $X=\{x_1,\ldots , x_n\}$ and distance function 
+$$D_1(x_i,x_j) = \sum_{\ell=1}^d\left |x_i(\ell)-x_j(\ell)\right|.$$ Show that the representative 
+$$
+x^\ast = \arg\min_{x\in \mathbb{R}^d}\sum_{x_i\in X}D_1(x_i,x)
+$$
+is the median of the points in $X$. That is, for every $\ell\in\{1,\ldots ,d\}$
+$x^\ast(\ell)=\texttt{median}(x_1(\ell),\ldots , x_n(\ell)\}$.\newline\newline
+
+\noindent\textbf{Answer}
+We can also solve this by differentiating. However, let us first break the data $X$ into two sets. Let $X^+$ be the points in $X$ that are above point $y$ and let $X^-$ be the points below point $y$:
+
+\begin{align*}
+\sum\limits_{i=1}^n D_1(x_i,y) &= \sum\limits_{i=1}^n \sum\limits_{l=1}^d |x_{il} - y_l| &\text{assumption}\\
+\frac{\partial D_1}{y_j} &= \frac{\partial}{\partial y_j} \sum\limits_{i=1}^n \sum\limits_{l=1}^d |x_{il} - y_l| &\text{differentiating both sides}\\
+  &= \sum\limits_{i=1}^n \frac{\partial}{\partial y_j}\sum\limits_{l} |x_{il} - y_l| &\text{distribute derivative operator}\\
+  &= \sum\limits_{i=1}^n \frac{\partial}{\partial y_j} |x_{ij} - y_j| &\text{when }l\neq j\text{ derivative is 0}\\
+  &= \sum\limits_{x\in X^+} \frac{\partial}{\partial y_j} (x_j - y_j) + \sum\limits_{x\in X^-} \frac{\partial}{\partial y_j} (-1)(x_j - y_j) &\text{splitting up points above and below }y_j\\
+0 &= \sum\limits_{x\in X^+} (-1) + \sum\limits_{x\in X^-} 1 &\text{derivative and setting derivative to 0}\\
+|X^+| &= |X^-| &\text{algebra}\\
+\end{align*}
+
+Therefore the optimum occurs when half of the points are above and the other are below. This occurs when $y_j$ is the median.\newpage
+
+
+\task{2 Locality Sensitive Hashing}
+Consider a locality sensitive hashing function $h$ associated with distance function $d$. Assume that $h$ and $d$ are associated with the following relationship:
+$$\text{Pr}(h(x)\neq h(y)) = d(x,y)$$
+for every pair of points $x,y$. Show that if the above equation is correct, then $d$ is a metric.\newline\newline
+
+\noindent\textbf{Answer}
+We need to show all 4 properties:
+
+1) $Pr[\cdot] \in [0,1] \rightarrow d(x,y) \ge 0$
+\newline\newline
+2) We need to show both arrows:
+
+
+$d(x,y) = 0 \rightarrow x = y$:
+
+\begin{align*}
+d(x,y) &= 0 &\text{assumption}\\
+Pr[h(x)\neq h(y)] &= 0 &\text{def of }d\\
+Pr[h(x) = h(y) &= 1 &Pr[h(x) = h(y)] = 1-Pr[h(x)\neq h(y)]\\
+x &= y & \text{collision will always occur only on equal items}
+\end{align*}
+
+$x = y \rightarrow d(x,y) = 0$:
+
+\begin{align*}
+x &= y &\text{assumption}\\
+h(x) &= h(y) &x = y\\
+Pr[h(x) = h(y)] &= 1 &\text{collision always occurs}\\
+Pr[h(y) \neq h(x)] &= 0 &Pr[h(y)\neq h(x)] = 1-Pr[h(x) = h(y)]\\
+d(x,y) &= 0 &\text{plugging in}
+\end{align*}
+\newline\newline
+
+3) $d(x,y) = Pr[h(y)\neq h(x)] = Pr[h(x)\neq h(y)] = d(y,x)$
+\newline\newline
+
+4) There are a few ways to show this. My favorite way is to use indicator random variables (IRVs). An indicator random variable takes on values 0 or 1. In general, IRVs are extremely useful. We will use it as such:
+
+Let $I_{xy} = \begin{cases}
+1 & Pr[h(x) \neq h(y)]\\
+0 & \text{otherwise}
+\end{cases}$
+
+We can now write the triangle inequality as follows:
+
+$$I_{xy} \le I_{xz} + I_{yz}$$
+
+We can prove this is true with a proof by contradition:
+Assume $I_{xy} > I_{xz} + I_{yz}$:
+
+\begin{align*}
+I_{xy} &\le I_{xz} + I_{yz} &\text{assumption}\\
+I_{xy} = 1 &\cap I_{xz} = 0 \cap I_{yz} = 0 &\text{only situation possible}\\
+h(z) = h(z) \cap &\rightarrow h(x) = h(y) &I_{xz} = 0\cap I_{xz} = 0 \rightarrow I_{xy} = 0\\
+\end{align*}
+This is a contradiction because we know $I_{xy} = 1$. Therefore, this situation cannot occur.
+
+Now that we know $I_{xy} \le I_{xz} + I_{yz}$ is true, we can take the expected value of it:
+
+\begin{align*}
+I_{xy} &\le I_{xz} + I_{yz} &\text{assumption}\\
+\mathbb{E}\Big[I_{xy} \le I_{xz} + I_{yz}\Big] &= \mathbb{E}[I_{xy}] \le \mathbb{E}[I_{xz}] + \mathbb{E}[I_{yz}] &\mathbb{E}\text{ is linear}\\
+  &= Pr[h(x)\neq h(y)] \le Pr[h(x)\neq h(z)] + Pr[h(y)\neq h(z)] &\mathbb{E}[I] = Pr[I = 1]\\
+  &= d(x,y) \le d(x,z) + d(y,z) &\text{abstraction}
+\end{align*}
+
+Therefore, $d$ is a metric
+
+\end{document}
+
+
