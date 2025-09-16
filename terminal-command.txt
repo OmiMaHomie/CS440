@@ -1,5 +1,5 @@
 javac --% -cp ./lib/*;. @scripted.srcs
-java --% -cp ./lib/*;. edu.cwru.sepia.Main2 data/labs/scripted/oneUnitGame.xml
+java --% -cp ./lib/*;. edu.cwru.sepia.Main2 data/labs/CORRECT_PATH/CORRECT_CONFIG.xml
 
 Do note that:
 Line 1, we may change @scripted.srcs
