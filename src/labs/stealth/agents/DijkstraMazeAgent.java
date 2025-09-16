@@ -35,6 +35,7 @@ public class DijkstraMazeAgent
                        Vertex goal,
                        StateView state)
     {
+        System.out.println("Dijkstra's Algorithm");
         return null;
     }
 
