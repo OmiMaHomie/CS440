@@ -1,4 +1,356 @@
-\documentclass{article}
+\documentclass[11pt]{article}
+
+\setlength{\headheight}{13.6pt}
+\addtolength{\topmargin}{-1.6pt}
+
+\usepackage{amsfonts}
+%\usepackage{geometry}
+\usepackage[paper=a4paper, 
+            left=20.0mm, right=20.0mm, 
+            top=25.0mm, bottom=25.0mm]{geometry}
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{fancyhdr, lastpage, bbding, pmboxdraw}
+\usepackage[usenames,dvipsnames]{color}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\definecolor{darkred}{rgb}{.7,0,0}
+\definecolor{darkgreen}{rgb}{0,.6,0}
+\definecolor{red}{rgb}{.98,0,0}
+\usepackage[colorlinks,pagebackref,pdfusetitle,urlcolor=darkblue,citecolor=darkblue,linkcolor=darkred,bookmarksnumbered,plainpages=false]{hyperref}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{ \fancyplain{}{Course Name} }
+%\chead{ \fancyplain{}{} }
+\rhead{ \fancyplain{}{\today} }
+%\rfoot{\fancyplain{}{page \thepage\ of \pageref{LastPage}}}
+\fancyfoot[RO, LE] {Page \thepage\ of \textcolor{black}{\pageref{LastPage}} }
+\thispagestyle{plain}
+
+%%%%%%%%%%%% LISTING %%%%
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\usepackage{verbatim} % used to display code
+\usepackage{fancyvrb}
+\usepackage{acronym}
+\usepackage{amsthm, amsmath}
+\usepackage{tikz}
+    \usetikzlibrary{calc, arrows, arrows.meta, positioning}
+\usepackage{amssymb,amsmath,stackengine}
+\stackMath
+\usepackage{ifthen}
+\usepackage{multicol} % ADD THIS FOR MULTI-COLUMN FORMAT
+
+\VerbatimFootnotes % Required, otherwise verbatim does not work in footnotes!
+
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.93}
+
+\lstset{
+	%language=bash,                          % Code langugage
+	basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+	keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+	commentstyle=\color{gray},              % Comments font
+	numbers=left,                           % Line nums position
+	numberstyle=\tiny,                      % Line-numbers fonts
+	stepnumber=1,                           % Step between two line-numbers
+	numbersep=5pt,                          % How far are line-numbers from code
+	backgroundcolor=\color{lightlightgray}, % Choose background color
+	frame=none,                             % A frame around the code
+	tabsize=2,                              % Default tab size
+	captionpos=t,                           % Caption-position = bottom
+	breaklines=true,                        % Automatic line breaking?
+	breakatwhitespace=false,                % Automatic breaks only at whitespace?
+	showspaces=false,                       % Dont make spaces visible
+	showtabs=false,                         % Dont make tabls visible
+	columns=flexible,                       % Column format
+	morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+% Create custom questions environment
+\newenvironment{questions}
+  {\begin{enumerate}}
+  {\end{enumerate}}
+\newcommand{\question}[1]{\item \textbf{#1}}
+
+% Makes answers env
+\newenvironment{answer}
+  {\vspace{0.5em}\noindent\textbf{Answer:}\par}
+  {\vspace{1em}}
+
+% 2-column env for answers
+\newenvironment{answercols}
+  {\begin{multicols}{2}}
+  {\end{multicols}}
+% \newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+% \newcommand{\extraspace}[]{}
+%     \begin{center}
+%         \textbf{Use this page for extra space.}
+%     \end{center}
+% }
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\vec}[1]{\textbf{#1}}
+
+\newcommand{\squig}{{\scriptstyle\sim\mkern-3.9mu}}
+\newcommand{\lsquigend}{{\scriptstyle\lhd\mkern-3mu}}
+\newcommand{\rsquigend}{{\scriptstyle\rule{.1ex}{0ex}\rhd}}
+\newcounter{sqindex}
+\newcommand\squigs[1]{%
+  \setcounter{sqindex}{0}%
+  \whiledo {\value{sqindex}< #1}{\addtocounter{sqindex}{1}\squig}%
+}
+\newcommand\rsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\squigs{#2}\rsquigend}{\scriptscriptstyle\text{#1\,}}}%
+}
+\newcommand\lsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\lsquigend\squigs{#2}}{\scriptscriptstyle\text{\,#1}}}%
+}
+
 \begin{document}
-Hello
+
+    \begin{center}
+        {\Large \textsc{WA1: Om Khadka}}
+    \end{center}
+
+    \begin{questions}
+        \question{Shortest Path Composition (10 points)}
+        Consider a graph $G = (V, E, w: E\rightarrow \mathbb{R}^{> 0})$ where $V$ is a set of vertices, $E$ is a set of (directed) edges, and $w$ is a \textit{weight function} that maps edges to weights where each weight is $> 0$. Let us define a path $p$ to be a sequence of edges where the destination vertex of one edge is the source vertex of the next edge (if the next edge exists). Let us define the \textit{cost} of an path the traditional way, i.e. the cost of a path $p$ is the sum of the edge weights in $p$:
+        $$cost(p) = \sum\limits_{e\in p} w(e)$$
+        Show that if we know a shortest path $p^* = a\rsquigarrow{x}{4}b$ from vertex $a$ to vertex $b$ has cost $x$. If we know $p^*$ passes through intermediary vertex $c$, then let $p_1 = a\rsquigarrow{y}{4}c$, and let $p_2 = c\rsquigarrow{z}{4}b$. Show that if $p^* = p_1 \cup p_2$, then $p_1$ is a shortest path from $a$ to $c$, and that $p_2$ is a shortest path from $c$ to $b$.\newline
+
+        \begin{answer}
+            The question will be solved by contradiction. Our new assumption will be:\newline\newline If $p^*$ is the shortest path from $a \to b$ with cost $x$, then $p_1$ isn’t the shortest path from $a \to c$, with cost $y$ OR $p_2$ isn’t the shortest path from $c \to b$, with cost $z$.\newline
+            \newline Solving for $p_1$ is shown below:
+
+            \begin{answercols}
+                $p_1^* = a^* \to c^*$, w/ cost $y^*$, shortest path from $a^*$ to $b^*$
+
+                $p_1 = y \newline p_1^* = y^* \newline y^* < y$
+
+                $p^{**} = y^*+z \newline p^* = y+z$
+
+                $y^*+z<y+z$
+
+                \columnbreak
+
+                Since $p_1$ isn’t the shortest path, there exists another path, $p_1^*$, that’s shorter than $p_1$.
+
+                From the given fact that we assume that $p_1$ is a longer path than $p_1^*$.
+
+                From given and the previous assumption.
+
+                Deduced from the previous.
+            \end{answercols}
+
+            A contradiciton forms here, as $p^*$ should be shortest path, not $p^{**}$. And by symmetry, the same logic will be true for $p^2$. Therefore $p_1$, $p_2$ MUST be the shortest paths from $a \to c, c \to b$.
+        \end{answer}
+    \end{questions}
+
+    \pagebreak
+
+    \begin{questions}
+        \question{Question 2: Iterative Deepening (10 points)}
+        Consider an unweighted (e.g. a constant positive weighted) graph $G = (V, E)$ where $V$ is a set of vertices and $E$ is a set of (directed) edges. Recall that the expansion of all simple paths in a graph forms a tree, which is then expanded via a graph traversal algorithm. Recall that the way DFS traverses this expansion tree is by drilling down a path until it reaches a leaf vertex, then backing off to the parent and trying another branch. Also recall that \textit{Depth-Limited} DFS (DLDFS) is just like the normal DFS algorithm except it is configured via a hyperparameter called the ``depth'' of the search. This value (a positive integer) provides an upper bound on the number of edges a path can be expanded before DFS arbitrarily backs off (regardless of whether the current vertex is a leaf or not).\newline
+
+        \noindent The \textit{Iterative Deepening} algorithm is a single-source shortest-path algorithm that uses DLDFS as a subroutine. Iterative Deepening repeatedly calls DLDFS where each call is given a different depth limit: the first call to DLDFS uses a depth limit of 1, the second call to DLDFS uses a depth limit of 2, the third call to DLDFS uses a depth limit of 3, etc. Iterative Deepening continues to call DLDFS until a path to all vertices have been found (from the source vertex), or until it is determined any unreached vertices are no-longer reachable from the source node. Prove that when Iterative Deepening returns a path from the source to any other vertex, that this path is the shortest path between that pair of vertices.\newline
+    
+        \begin{answer}
+            The statement `Iterative Deepening (ID) returns a path from source vertex $s$ to vertex $t$, that path will be the shortest' can be solved with induction.
+            \newline\newline
+            For the base case of $d = 1$:
+
+            \begin{answercols}
+                $DLDFS(s, 1)$ explores all edges from $s$.
+
+                If $t$ is adjacent to $s$, $s \to t$ is a valid path with length of $1$.
+
+                \columnbreak
+
+                $DLDFS$ with a limit of $1$ can only traverse one edge from the source.
+
+                It's an unweighted graph, and only $1$ edge away from the source vertex.
+            \end{answercols}
+
+            For the inductive step, we solve the statement `For all $k<d$, if $DLDFS(s,k)$ finds a path to $v$, then $s \to v$ has length $k$ and is the shortest path to $v$'.
+
+            \begin{answercols}
+                Suppose $DLDFS(s,d)$ finds a path $p$ from $s \to t$.
+
+                $length(p)=d$
+
+                Suppose that there’s a shorter path, $p'$, with length $l<d$.
+
+                Then, $DLDFS(s,l)$ would have found $p'$.
+
+                No such shorter path exists.
+
+                For all $d \leq 1$, if a path is found at depth $d$, it is the shortest path.
+
+                \columnbreak
+
+                Inductive step, with $d$ being the depth limit.
+
+                If a shorter path existed, it would’ve been returned from a previous call of $DLDFS$.
+
+                Contradictory assumption
+
+                Proving how the contradictory statement is indeed contradictory. In this case, $t$ it wasn’t found until depth $d$, forming the contradiction.
+
+                $p$ is the shortest path.
+
+                The conclusion of this proof and, thus, proving the initial statement.
+            \end{answercols}
+        \end{answer}
+    \end{questions}
+
+    \pagebreak
+
+    \begin{questions}
+        \question{Question 3: Graph Diameters and the Longest-Shortest Path (10 points)}
+        The diameter of an undirected, unweighted graph $G=(V, E)$ is defined to be the solution to the following optimization problem:
+        $$d = \max\limits_{\substack{(u,v)\in V \\ u\neq v}} \min\limits_{k\in\mathbb{Z}^{\ge 0}} cost(u\rsquigarrow{k}{4}v)$$
+        which in english is ``the largest of all the shortest paths in $G$'' where $u\rsquigarrow{k}{4}v$ is a path from vertex $u$ to vertex $v$ using exactly $k$ edges, and the cost of a path is the sum of the edge weights used in that path (in our case $cost(u\rsquigarrow{k}{4}v) = k$). Prove that the diameter of any unweighted, undirected graph is at most $|V|$ (the number of vertices in the graph).\newline
+
+        \begin{answer}
+            \begin{answercols}
+                1. $G=(V,E)$
+
+                2. $d = \max_{\substack{(u,v) \in V \\ u \neq v}} \min_{k \in \mathbb{Z}^{\geq 0}} \text{cost}(u \rsquigarrow{k}{4}v)$
+
+                3. For any distinct $u$, $v \in V$, let $P$ = the shortest path from $u \to v$.
+
+                4. $P$ is simple.
+
+                5. Let $k=\#$ of vertices in $P$. $\#$ of edges will be $k-1$.
+
+                6. $k \leq |V|$
+
+                7. $\#$ of edges in $P \leq |V|$
+
+                8. $\text{dist}(u,v) \leq |V|-1$ for all $u,v$
+
+                9. $d = \max_{u,v} \text{dist}(u,v) \leq |V|-1$
+
+                \columnbreak
+
+                Given definition of the graph.
+
+                Definition of diameter.
+
+                Consider any pair of distinct vertices.
+
+                From 3, $P$ does not contain any cycles, as removing those cycles would create a shorter path, which would lead to a contradiction.
+
+                From 4, $P$ is simple, and this is the definition of a simple path.
+
+                From 4, 5, a simple path can’t be longer than the \# of vertices it contains.
+
+                From 6, \# of edges is one less than vertices.
+
+                From 7, the shortest path length can be at most $|V|-1$.
+
+                From 8, now the maximum over all potential paths can only be at most $\leq |V|-1$.
+            \end{answercols}
+
+            This proves that, at a maximum, the diameter of an unweighted, undirected graph can only go up to $|V|-1$. This also implies that $d \leq |V|$.
+        \end{answer}
+    \end{questions}
+
+    \pagebreak
+
+    \begin{questions}
+        \question{Question 4: Dijkstras Algorithm and Shortest Paths (20 points)}
+        Consider a graph $G = (V, E, w: E\rightarrow \mathbb{R}^{> 0})$ where $V$ is a set of vertices, $E$ is a set of (directed) edges, and $w$ is a \textit{weight function} that maps edges to weights where each weight is $> 0$. If we were to search for the shortest path between a pair of vertices in such a graph, we would be forced to use dijkstras algorithm as BFS and Iterative Deepening assume a constant weighting. Prove that when dijkstras algorithm returns a path from the source to any other vertex, that this path is the shortest path between that pair of vertices.\newline
+
+        \begin{answer}
+            We begin by establishing some fundamentals about Dijkstra’s algorithm itself. Note, the format $d[x]$ means the weight of the supposed vertex $x$.
+
+            \begin{answercols}
+                1. Dijskta’s algorithm, on the first iteration, holds an empty set, $S={}$. Because of this, the algorithm’s invariant is true.
+
+                2. $d[s]=0$, while $d[v]=\inf$
+
+                3. Let $u$ be the vertex extracted from a priority queue (a vertex with the current minimum $d[u] \in S$). $u$ is added to $S$.\newline\newline Then, $d[u]$ is the shortest path weight from $s \to u$.
+            
+                4. The way the shortest distance is calculated is from the following line:\newline\newline if $d[v]>d[u]+w(u, v)$ then $d[v]=d[u]+w(u,v)$
+
+                \columnbreak
+
+                Establishing the fact that Dijsktra’s algorithm is primarily based on an invariant.
+                
+                $d[s]$ is correct, as it’s just the distance from traveling from the origin to the origin (just standing still). $d[v]$ being infinite represents that they’re yet to be known.
+
+                Invariant assumption. We hold that this is true for all previous iterations, and now will have to show how adding $u$ to $S$ preserves the invariant.
+
+                This ensures that the calculated shortest distance, $d[v]$, will always be $\geq$ the true shortest distance.
+            \end{answercols}
+
+            We can now solve by contradiction:
+            \pagebreak
+
+            \begin{answercols}
+                5. Suppose $d[u]$ is not the shortest path weight from $s \to u$. Thus, there exists another path, $P$, from $s \to u<d[u]$
+
+                6. $s\in S$, $u \notin S$, path $P$ must exit $S$ at some point.\newline\newline Let $(x,y)$ be the 1st edge along $P$ where $x \in S$ and $y \notin S$.\newline\newline Let $P_s \to x$ be the subpath of $P$ from $s \to x$.
+
+                7. Let $f(x)$ be the true shortest path weight from $s \to v$.\newline\newline From 5, $f(u)<d[u]$
+
+                8. The weight of $P_s \to x+w(x, y \leq)$ the entire weight of $P$ (which goes to $u$).\newline\newline  From 6, $f(x)+w(x, y)f(u)$
+
+                9. $x \in S$. By 2, since $x \in S$, $d[x]=f(x)$. From 4, after $x$ was added to $S$, we calculated all edges, including $(x, y)$.\newline\newline Therefore, $d[y] \leq d[x]+w(x,y)=f(x)+w(x,y)$\newline\newline From 7, this also means that $d[y] \leq f(x)+w(x,y)$.
+
+                10. From 6,7, $d[y] \leq f(x)+w(x, y) \leq f(u)$
+
+                11. From 5,8, $d[y] \leq f(u) \leq d(u)$
+
+                12. From 10, $d[u] \leq d[y]$
+
+                13. Contradiction at 12
+
+                \columnbreak
+
+                Contradiction assumption
+
+                The path starts in $S$ (which also has $s$). It end eventually ends outside of $S$ (at $u$). Therefore, it must have a transition edge where it leaves $S$.
+
+                This is more concretely defining our contradictory assumption of $d[u]$ being wrong.
+
+                The path of $P$ is AT LEAST as long as any cut version of itself, as all edge weights are positive.
+
+                This is just the result of the calculations that Dijkstra’s algorithm does and assuming that the invariant is true for $x$.
+
+                Chaining inequalities
+
+                Combining the contradiction assumption with 10.
+
+                In this iteration, we chose $u$, not $y$, to extract from the priority queue. The algorithm always extracts the vertex with the smallest current distance.
+
+                Our initial assumption that $d[u]$ wasn’t the shortest path weight has to be false from this. So, $d[u]=f(u)$, and thusly from 4, the invariant that all $u \in S$ have correct $d[u]$ holds.\newline\newline The only way to resolve the contradiction is to reject the initial contradiction assumption. Therefore $d[u]$ must be correct when added to $S$.
+            \end{answercols}
+
+            Thus, this proves that when Dijstrka’s algorithm return the shortest path weight from $s \to u$, $d[u]$, that it is indeed the shortest path and is correct.
+
+            For closure, we can also prove how the invariant ends, too:
+
+            \begin{answercols}
+                13. Algorithm ends when $S=V$
+
+                14. Since the invariant was true each time a vertex was added to $S$, and from 13, thusly for each vertex $v \in V$, $d[v]$ is the weight of the shortest path from $s \to v$.
+
+                \columnbreak
+
+                The algorithm continues until all vertices in the priority queue have been processed.
+
+                The invariant condition was true for every step of the loop, and is now true for the entire graph.
+            \end{answercols}
+        \end{answer}
+    \end{questions}
 \end{document}
