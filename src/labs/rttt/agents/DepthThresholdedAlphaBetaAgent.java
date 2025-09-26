@@ -14,29 +14,29 @@ import edu.bu.labs.rttt.utils.Pair;
 import java.util.List;
 import java.util.Map;
 
-
 // JAVA PROJECT IMPORTS
 import src.labs.rttt.heuristics.Heuristics;
 import src.labs.rttt.ordering.MoveOrderer;
 
-
 public class DepthThresholdedAlphaBetaAgent
     extends Agent
 {
-
+    //
+    // Fields
+    //
     public static final int DEFAULT_MAX_DEPTH = 3;
-
     private int maxDepth;
-
     public DepthThresholdedAlphaBetaAgent(PlayerType myPlayerType)
     {
         super(myPlayerType);
         this.maxDepth = DEFAULT_MAX_DEPTH;
     }
 
+    //
+    // Getter/Setters
+    //
     public final int getMaxDepth() { return this.maxDepth; }
     public void setMaxDepth(int i) { this.maxDepth = i; }
-
     public String getTabs(Node node)
     {
         StringBuilder b = new StringBuilder();
@@ -47,6 +47,11 @@ public class DepthThresholdedAlphaBetaAgent
         return b.toString();
     }
 
+    //
+    // Methods
+    //
+
+    // Runs the function to determine and play the best possible moves.
     public Node alphaBeta(Node node,
                           double alpha,
                           double beta)
@@ -55,11 +60,74 @@ public class DepthThresholdedAlphaBetaAgent
         // System.out.println(this.getTabs(node) + "Node(currentPlayer=" + node.getCurrentPlayerType() +
         //      " isTerminal=" + node.isTerminal() + " lastMove=" + node.getLastMove() + ")");
 
-        /**
-         * TODO: complete me!
-         */
-        return null;
-    }
+        // @ Terminal node, end
+        if (node.isTerminal()) {
+            node.setUtilityValue(node.getTerminalUtility());
+            return node;
+        }
+        
+        // @ Depth limit, ret best node so far
+        if (node.getDepth() >= this.getMaxDepth()) {
+            double heuristicValue = Heuristics.calculateHeuristicValue(node);
+            node.setUtilityValue(heuristicValue);
+            return node;
+        }
+
+        // Get all possible moves & ORDER
+        List<Node> children = MoveOrderer.orderChildren(node.getChildren());; 
+        
+        // Empty check (SHOULDN'T HAPPEN?)
+        if (children.isEmpty()) {
+            double heuristicValue = Heuristics.calculateHeuristicValue(node);
+            node.setUtilityValue(heuristicValue);
+            return node;
+        }
+
+        Node bestChild = null;
+        double bestUtility;
+
+        // Setting bestUtility
+        if (node.getCurrentPlayerType() == node.getMyPlayerType()) {
+            bestUtility = Double.NEGATIVE_INFINITY; // MAX
+        } else {
+            bestUtility = Double.POSITIVE_INFINITY; // MIN
+        }
+
+        // A-B pruning main loop
+        for (Node child : children) {
+            Node resultNode = alphaBeta(child, alpha, beta);
+            double childUtility = resultNode.getUtilityValue();
+            
+            // MAX
+            if (node.getCurrentPlayerType() == node.getMyPlayerType()) {
+                if (childUtility > bestUtility) {
+                    bestUtility = childUtility;
+                    bestChild = child;
+                }
+                
+                // Alpha & pruning update
+                alpha = Math.max(alpha, bestUtility);
+                if (beta <= alpha) {
+                    break; // @ beta, so cutoff and check other siblings
+                }
+                
+            } else { // MIN
+                if (childUtility < bestUtility) {
+                    bestUtility = childUtility;
+                    bestChild = child;
+                }
+                
+                // Beta & pruning update
+                beta = Math.min(beta, bestUtility);
+                if (beta <= alpha) {
+                    break; // @ aplha, so cutoff and check other siblings
+                }
+            }
+        }
+            // Set nod to the one with best util, and ret the best-move child.
+            node.setUtilityValue(bestUtility);
+            return bestChild;
+        }
 
     @Override
     public Pair<Coordinate, Coordinate> makeFirstMove(final RecursiveTicTacToeGameView game)
