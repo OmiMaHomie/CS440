@@ -120,19 +120,6 @@ public class PacmanAgent
 
         return validMoves;
     }
-    
-    // making a private helper method to make linkedlist reverse
-    private LinkedList<Coordinate> makeLinkedList(Coordinate v, Map<Coordinate, Coordinate> m) 
-    {
-        LinkedList<Coordinate> linkedLi = new LinkedList<>();
-        while (v != null) {
-                    linkedLi.push(v); 
-                    v = m.get(v);
-        }
-        return linkedLi;
-    }
-
-    // Returns the shortest path from src to tgt. NOTE the Path will be REVERSED.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src,
                                         final Coordinate tgt,
@@ -152,34 +139,27 @@ public class PacmanAgent
             // Get latest vertex from stack.
             Coordinate currentVertex = dfsStack.pop();
             System.out.println("Current vertex is " + currentVertex);
-
-            // If we hit tgt, return the path (tgt --> src)
-            if (currentVertex.equals(tgt)) {
+            if (currentVertex.equals(tgt)) { //if enter this then i have found the opponent
                 Path<Coordinate> path = null;
-                
-                while (currentVertex != null) {
+                Coordinate v = currentVertex;
+                while (v != null) { //while have parent
                     if (path == null) {
                         path = new Path<>(v);
                     } else {
                         path = new Path<>(v, 1f, path);
                     }
-
-                    // Gets the parent node from child (going back 1)
-                    currentVertex = parents.get(currentVertex);                    
+                    v = parents.get(v); //getting parent node from the child
                 }
-                
-                //
-                // This is the ideal return point.
-                //
+                System.out.println(path);
                 return path;
-            } else { // Else, add each potenital UNVISITED nodes in stack
-                Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
-
-                for (Coordinate currentNeighbor : neighbors) {
-                    if (visited.contains(currentNeighbor) == false) {
-                        visited.add(currentNeighbor);
-                        dfsStack.add(currentNeighbor);
-                        parents.put(currentNeighbor, currentVertex);
+            }
+            //if got to this point not the goal vertex so finding neighbors
+            Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
+            for (Coordinate currentNeighbor : neighbors) { //going through the possible directions
+                if (visited.contains(currentNeighbor) == false) { //don't go to visited vertex and also be in bounds
+                    visited.add(currentNeighbor);
+                    dfsStack.add(currentNeighbor);
+                    parents.put(currentNeighbor, currentVertex);
                     }
                 }
             }
