@@ -1,11 +1,10 @@
 package src.pas.pacman.agents;
 
-
-import java.util.HashMap;
-import java.util.HashSet;
 // SYSTEM IMPORTS
 import java.util.Random;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
