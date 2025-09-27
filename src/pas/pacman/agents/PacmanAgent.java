@@ -1,5 +1,8 @@
 package src.pas.pacman.agents;
 
+
+import java.util.HashMap;
+import java.util.HashSet;
 // SYSTEM IMPORTS
 import java.util.Random;
 import java.util.Set;
@@ -80,6 +83,21 @@ public class PacmanAgent
     public Set<Coordinate> getOutgoingNeighbors(final Coordinate src,
                                                 final GameView game)
     {
+        int xCord = src.getXCoordinate();
+        int yCord = src.getYCoordinate();
+        Set<Coordinate> validMoves = new HashSet<Coordinate>();
+        if (game.isLegalPacmanMove(src, Action.EAST)) {
+            validMoves.add(new Coordinate(xCord - 1, yCord));
+        }
+        if (game.isLegalPacmanMove(src, Action.WEST)) {
+            validMoves.add(new Coordinate(xCord + 1, yCord));
+        }
+        if (game.isLegalPacmanMove(src, Action.NORTH)) {
+            validMoves.add(new Coordinate(xCord, yCord + 1));
+        }
+        if (game.isLegalPacmanMove(src, Action.SOUTH)) {
+            validMoves.add(new Coordinate(xCord, yCord - 1));
+        }
         return null;
     }
 
