@@ -139,13 +139,9 @@ public class PacmanAgent
             // Get latest vertex from stack.
             Coordinate currentVertex = dfsStack.pop();
             System.out.println("Current vertex is " + currentVertex);
-<<<<<<< HEAD
 
             // If we hit tgt, return the path (tgt --> src, it is reversed)
             if (currentVertex.equals(tgt)) {
-=======
-            if (currentVertex.equals(tgt)) { //if enter this then i have found the opponent
->>>>>>> de7a7d1da4d61fd0d6114ae89888a2d4947ca01c
                 Path<Coordinate> path = null;
                 Coordinate v = currentVertex;
                 while (v != null) { //while have parent
@@ -156,19 +152,22 @@ public class PacmanAgent
                     }
                     v = parents.get(v); //getting parent node from the child
                 }
-                System.out.println(path);
+
+                //
+                // This is the ideal RETURN PATH.
+                //
                 return path;
-            }
-            //if got to this point not the goal vertex so finding neighbors
-            Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
-            for (Coordinate currentNeighbor : neighbors) { //going through the possible directions
-                if (visited.contains(currentNeighbor) == false) { //don't go to visited vertex and also be in bounds
-                    visited.add(currentNeighbor);
-                    dfsStack.add(currentNeighbor);
-                    parents.put(currentNeighbor, currentVertex);
+            } else { // Else, go through each potential path and add UNVISITED neighbors to stack.
+                Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
+                for (Coordinate currentNeighbor : neighbors) {
+                    if (visited.contains(currentNeighbor) == false) {
+                        visited.add(currentNeighbor);
+                        dfsStack.add(currentNeighbor);
+                        parents.put(currentNeighbor, currentVertex);
+                        }
                     }
                 }
-            }
+            }            
         }
 
         // SHOULDN'T EVER REACH THIS POINT.
