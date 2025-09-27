@@ -56,7 +56,7 @@ public class DepthThresholdedAlphaBetaAgent
                           double alpha,
                           double beta)
     {
-        // uncomment if you want to see the tree being made
+        // // uncomment if you want to see the tree being made
         // System.out.println(this.getTabs(node) + "Node(currentPlayer=" + node.getCurrentPlayerType() +
         //      " isTerminal=" + node.isTerminal() + " lastMove=" + node.getLastMove() + ")");
 
