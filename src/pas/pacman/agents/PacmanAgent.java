@@ -9,7 +9,6 @@ import java.util.Stack;
 import java.util.LinkedList;
 import java.util.Map;
 
-import edu.bu.labs.stealth.graph.Vertex;
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
 import edu.bu.pas.pacman.agents.SearchAgent;
@@ -20,6 +19,8 @@ import edu.bu.pas.pacman.graph.Path;
 import edu.bu.pas.pacman.graph.PelletGraph.PelletVertex;
 import edu.bu.pas.pacman.utils.Coordinate;
 import edu.bu.pas.pacman.utils.Pair;
+import edu.bu.labs.stealth.graph.Vertex;
+import edu.bu.pas.pacman.game.DefaultBoard;
 
 
 
@@ -43,14 +44,13 @@ public class PacmanAgent
     {
         super(myUnitId, pacmanId, ghostChaseRadius);
         this.random = new Random();
-        System.out.println("hi 1");
     }
 
     //
     // Getter/Setters
     //
 
-    public final Random getRandom() { System.out.println("hi 2"); return this.random; }
+    public final Random getRandom() { return this.random; }
 
     //
     // Methods
@@ -60,7 +60,6 @@ public class PacmanAgent
     public Set<PelletVertex> getOutoingNeighbors(final PelletVertex vertex,
                                                  final GameView game)
     {
-        System.out.println("hi 3");
         return null;
     }
 
@@ -68,7 +67,6 @@ public class PacmanAgent
     public float getEdgeWeight(final PelletVertex src,
                                final PelletVertex dst)
     {
-        System.out.println("hi 4");
         return 1f;
     }
 
@@ -76,14 +74,12 @@ public class PacmanAgent
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
     {
-        System.out.println("hi 5");
         return 1f;
     }
 
     @Override
     public Path<PelletVertex> findPathToEatAllPelletsTheFastest(final GameView game)
     {
-        System.out.println("hi 6");
         return null;
     }
 
@@ -106,14 +102,15 @@ public class PacmanAgent
                 // Check which direction to add.
                 if (game.isLegalPacmanMove(src, Action.EAST)) {
                     validMoves.add(new Coordinate(x + 1, y));
-                } else if (game.isLegalPacmanMove(src, Action.WEST)) {
+                }
+                if (game.isLegalPacmanMove(src, Action.WEST)) {
                     validMoves.add(new Coordinate(x - 1, y));
-                } else if (game.isLegalPacmanMove(src, Action.NORTH)) {
+                }
+                if (game.isLegalPacmanMove(src, Action.NORTH)) {
                     validMoves.add(new Coordinate(x, y - 1));
-                } else if (game.isLegalPacmanMove(src, Action.SOUTH)) {
+                }
+                if (game.isLegalPacmanMove(src, Action.SOUTH)) {
                     validMoves.add(new Coordinate(x, y + 1));
-                } else {
-                    System.out.println("There's some error in the logic of checking valid neighboring tiles."); // Shouldn't happen.
                 }
             }
         }
@@ -157,17 +154,17 @@ public class PacmanAgent
                 // This is the ideal RETURN PATH.
                 //
                 return path;
-            } else { // Else, go through each potential path and add UNVISITED neighbors to stack.
-                Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
-                for (Coordinate currentNeighbor : neighbors) {
-                    if (visited.contains(currentNeighbor) == false) {
-                        visited.add(currentNeighbor);
-                        dfsStack.add(currentNeighbor);
-                        parents.put(currentNeighbor, currentVertex);
-                        }
-                    }
+            } 
+
+            // Else, go through each potential path and add UNVISITED neighbors to stack.
+            Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
+            for (Coordinate currentNeighbor : neighbors) {
+                if (!visited.contains(currentNeighbor)) {
+                    visited.add(currentNeighbor);
+                    dfsStack.add(currentNeighbor);
+                    parents.put(currentNeighbor, currentVertex);
                 }
-            }            
+            }           
         }
 
         // SHOULDN'T EVER REACH THIS POINT.
@@ -175,22 +172,21 @@ public class PacmanAgent
         return new Path<Coordinate>(src);
     }
 
+    // TODO
     @Override
     public void makePlan(final GameView game)
     {
-        System.out.println("hi 7");
+        return;
     }
 
     @Override
     public Action makeMove(final GameView game)
     {
-        System.out.println("hi 8");
         return Action.values()[this.getRandom().nextInt(Action.values().length)];
     }
 
     @Override
     public void afterGameEnds(final GameView game)
     {
-        System.out.println("hi 9");
     }
 }
