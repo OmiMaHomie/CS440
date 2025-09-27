@@ -153,7 +153,7 @@ public class PacmanAgent
             Coordinate currentVertex = dfsStack.pop();
             System.out.println("Current vertex is " + currentVertex);
 
-            // If we hit tgt, return the path (tgt --> src)
+            // If we hit tgt, return the path (tgt --> src, it is reversed)
             if (currentVertex.equals(tgt)) {
                 Path<Coordinate> path = null;
                 
