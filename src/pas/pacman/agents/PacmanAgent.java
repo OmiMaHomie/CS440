@@ -78,26 +78,38 @@ public class PacmanAgent
         return null;
     }
 
+    // Gets all possible neighboring moves from a src coord.
     @Override
     public Set<Coordinate> getOutgoingNeighbors(final Coordinate src,
                                                 final GameView game)
     {
-        int xCord = src.getXCoordinate();
-        int yCord = src.getYCoordinate();
         Set<Coordinate> validMoves = new HashSet<Coordinate>();
-        if (game.isLegalPacmanMove(src, Action.EAST)) {
-            validMoves.add(new Coordinate(xCord - 1, yCord));
+
+        // List out all possible actions.
+        Action[] actions = {Action.EAST, Action.WEST, Action.NORTH, Action.SOUTH};
+
+        for (Action action : actions) {
+            // If we can move a certain way, add it to the set.
+            if (game.isLegalPacmanMove(src, action)) {
+                int x = src.getXCoordinate();
+                int y = src.getYCoordinate();
+                
+                // Check which direction to add.
+                if (game.isLegalPacmanMove(src, Action.EAST)) {
+                    validMoves.add(new Coordinate(x + 1, y));
+                } else if (game.isLegalPacmanMove(src, Action.WEST)) {
+                    validMoves.add(new Coordinate(x - 1, y));
+                } else if (game.isLegalPacmanMove(src, Action.NORTH)) {
+                    validMoves.add(new Coordinate(x, y - 1));
+                } else if (game.isLegalPacmanMove(src, Action.SOUTH)) {
+                    validMoves.add(new Coordinate(x, y + 1));
+                } else {
+                    System.out.println("There's some error in the logic of checking valid neighboring tiles."); // Shouldn't happen.
+                }
+            }
         }
-        if (game.isLegalPacmanMove(src, Action.WEST)) {
-            validMoves.add(new Coordinate(xCord + 1, yCord));
-        }
-        if (game.isLegalPacmanMove(src, Action.NORTH)) {
-            validMoves.add(new Coordinate(xCord, yCord + 1));
-        }
-        if (game.isLegalPacmanMove(src, Action.SOUTH)) {
-            validMoves.add(new Coordinate(xCord, yCord - 1));
-        }
-        return null;
+
+        return validMoves;
     }
 
     @Override
