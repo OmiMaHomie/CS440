@@ -1,10 +1,8 @@
 package src.pas.pacman.agents;
 
-
 // SYSTEM IMPORTS
 import java.util.Random;
 import java.util.Set;
-
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
@@ -18,12 +16,20 @@ import edu.bu.pas.pacman.utils.Coordinate;
 import edu.bu.pas.pacman.utils.Pair;
 
 
+
 public class PacmanAgent
     extends SearchAgent
     implements ThriftyPelletEater
 {
+    //
+    // Fields
+    //
 
     private final Random random;
+
+    //
+    // Constructors
+    //
 
     public PacmanAgent(int myUnitId,
                        int pacmanId,
@@ -33,7 +39,15 @@ public class PacmanAgent
         this.random = new Random();
     }
 
+    //
+    // Getter/Setters
+    //
+
     public final Random getRandom() { return this.random; }
+
+    //
+    // Methods
+    //
 
     @Override
     public Set<PelletVertex> getOutoingNeighbors(final PelletVertex vertex,
@@ -92,6 +106,6 @@ public class PacmanAgent
     @Override
     public void afterGameEnds(final GameView game)
     {
-
+        
     }
 }
