@@ -1,13 +1,13 @@
 package src.pas.pacman.agents;
 
-import java.util.LinkedList;
-import java.util.Map;
 // SYSTEM IMPORTS
 import java.util.Random;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
+import java.util.LinkedList;
+import java.util.Map;
 
 import edu.bu.labs.stealth.graph.Vertex;
 // JAVA PROJECT IMPORTS
@@ -120,52 +120,73 @@ public class PacmanAgent
 
         return validMoves;
     }
-    private LinkedList<Coordinate> makeLinkedList(Coordinate v, Map<Coordinate, Coordinate> m) { //making a private helper method to make linkedlist reverse
-            LinkedList<Coordinate> linkedLi = new LinkedList<>();
-            while (v != null) {
-                        linkedLi.push(v); 
-                        v = m.get(v);
-            }
-            return linkedLi;
+    
+    // making a private helper method to make linkedlist reverse
+    private LinkedList<Coordinate> makeLinkedList(Coordinate v, Map<Coordinate, Coordinate> m) 
+    {
+        LinkedList<Coordinate> linkedLi = new LinkedList<>();
+        while (v != null) {
+                    linkedLi.push(v); 
+                    v = m.get(v);
         }
+        return linkedLi;
+    }
+
+    // Returns the shortest path from src to tgt. NOTE the Path will be REVERSED.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src,
                                         final Coordinate tgt,
                                         final GameView game)
     {
-        Stack<Coordinate> dfsStack = new Stack<>(); //only difference for bfs and dfs. hanging this from a queue to a stack, then method poll to po
-        Set<Coordinate> visited = new HashSet<>(); //the visited set of visited vertex
-        Map<Coordinate, Coordinate> parents = new HashMap<>(); //using map per piazza post to help reconstruct the tree
+        Stack<Coordinate> dfsStack = new Stack<>(); // stack for dfs queue
+        Set<Coordinate> visited = new HashSet<>(); // contains visited nodes
+        Map<Coordinate, Coordinate> parents = new HashMap<>(); // Will help to backtrace the path to output path in correct order
+
+        // Init the DFS search
         dfsStack.add(src);
         visited.add(src);
+        parents.put(src, null);
+
+
         while(!dfsStack.isEmpty()){
-            Coordinate currentVertex = dfsStack.pop(); //for dfs now using pop instead of poll method
+            // Get latest vertex from stack.
+            Coordinate currentVertex = dfsStack.pop();
             System.out.println("Current vertex is " + currentVertex);
-            if (currentVertex.equals(tgt)) { //if enter this then i have found the opponent
-                Path<Coordinate> bfsPath = null;
-                LinkedList<Coordinate> newList = makeLinkedList(currentVertex, parents); //got the dfs working, but in order goal -> start, i need start -> goal so using linked list
-                while (!newList.isEmpty()) {
-                    Coordinate stackPop = newList.pop();
-                    if (bfsPath == null) {
-                        bfsPath = new Path<Coordinate>(stackPop);
+
+            // If we hit tgt, return the path (tgt --> src)
+            if (currentVertex.equals(tgt)) {
+                Path<Coordinate> path = null;
+                
+                while (currentVertex != null) {
+                    if (path == null) {
+                        path = new Path<>(v);
                     } else {
-                        bfsPath = new Path<Coordinate>(stackPop, 1f, bfsPath); //appending the new vertex to the path 1f for equal weight
+                        path = new Path<>(v, 1f, path);
+                    }
+
+                    // Gets the parent node from child (going back 1)
+                    currentVertex = parents.get(currentVertex);                    
+                }
+                
+                //
+                // This is the ideal return point.
+                //
+                return path;
+            } else { // Else, add each potenital UNVISITED nodes in stack
+                Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
+
+                for (Coordinate currentNeighbor : neighbors) {
+                    if (visited.contains(currentNeighbor) == false) {
+                        visited.add(currentNeighbor);
+                        dfsStack.add(currentNeighbor);
+                        parents.put(currentNeighbor, currentVertex);
                     }
                 }
-                System.out.println(bfsPath);
-                return bfsPath;
             }
-            //if got to this point not the goal vertex so finding neighbors
-            Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
-            for (Coordinate currentNeighbor : neighbors) { //going through the possible directions
-                if (visited.contains(currentNeighbor) == false) { //don't go to visited vertex and also be in bounds
-                    visited.add(currentNeighbor);
-                    dfsStack.add(currentNeighbor);
-                    parents.put(currentNeighbor, currentVertex);
-                    }
-                }
         }
-        System.out.println("If reached this point no bfs path found, I will return new path with just src vertex");
+
+        // SHOULDN'T EVER REACH THIS POINT.
+        System.out.println("If reached this point no dfs path found, I will return new path with just src vertex");
         return new Path<Coordinate>(src);
     }
 
