@@ -33,6 +33,8 @@ public class PacmanAgent
     //
 
     private final Random random;
+    // final Stack<Coordinate> --> Plan (from SearchAgent)
+    // final Coordinate --> tgt Coordinate (from SearchAgent)
 
     //
     // Constructors
@@ -117,6 +119,7 @@ public class PacmanAgent
 
         return validMoves;
     }
+
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src,
                                         final Coordinate tgt,
@@ -176,7 +179,27 @@ public class PacmanAgent
     @Override
     public void makePlan(final GameView game)
     {
-        return;
+        // This code assumes that the tgt Coordinate field IS NOT NULL.
+        // Firstly, call the search agent.
+        Path<Coordinate> pathToTgt = graphSearch(game.getEntity(this.getPacmanID()).getCurrentCoordinate(), this.getTargetCoordinate(), game);
+
+        // Init a new Stack for the new plan.
+        Stack<Coordinate> newPlan = new Stack<Coordinate>();
+        newPlan.add(pathToTgt.getDestination());
+
+        // Add the entire path outputted from graphSearch() into the newPlan.
+        while (true) {
+            pathToTgt = pathToTgt.getParentPath();
+
+            if (pathToTgt.getDestination() != null) {
+                newPlan.add(pathToTgt.getDestination());
+            } else {
+                break;
+            }
+        }
+
+        // Set the new plan in the class.
+        this.setPlanToGetToTarget(newPlan);
     }
 
     @Override
