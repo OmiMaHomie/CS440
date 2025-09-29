@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Stack;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
@@ -184,25 +186,24 @@ public class PacmanAgent
     @Override
     public void makePlan(final GameView game)
     {
-        // This code assumes that the tgt Coordinate field IS NOT NULL.
-        // Firstly, call the search agent.
+        // Firstly, call the search algo & init new plan.
         Path<Coordinate> pathToTgt = graphSearch(game.getEntity(this.getPacmanId()).getCurrentCoordinate(),
                                                 this.getTargetCoordinate(),
                                                 game);
-
-        // Init a new Stack for the new plan.
         Stack<Coordinate> newPlan = new Stack<Coordinate>();
-        newPlan.add(pathToTgt.getDestination());
 
-        // Add the entire path outputted from graphSearch() into the newPlan.
-        while (true) {
+        // Have a list temporarily store the output of Path (src --> tgt)
+        List<Coordinate> tempPath = new ArrayList<>();
+        while (pathToTgt != null && pathToTgt.getDestination() != null) {
+            tempPath.add(pathToTgt.getDestination());
             pathToTgt = pathToTgt.getParentPath();
+        }
 
-            if (pathToTgt.getDestination() != null) {
-                newPlan.add(pathToTgt.getDestination());
-            } else {
-                break;
-            }
+        // Reverse the list and push to stack (STACK: tgt (bottom) --> src (top))
+        for (int i = tempPath.size() - 1; i >= 0; i--) {
+            Coordinate coord = tempPath.get(i);
+            System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
+            newPlan.push(coord);
         }
 
         // Set the new plan in the class.
@@ -212,7 +213,48 @@ public class PacmanAgent
     @Override
     public Action makeMove(final GameView game)
     {
-        return Action.values()[this.getRandom().nextInt(Action.values().length)];
+        Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
+        Stack<Coordinate> plan = this.getPlanToGetToTarget();
+        
+        // If no plan or plan is empty, find a pellet and create plan
+        if (plan == null || plan.isEmpty()) {
+            System.out.println("Plan is empty, calculating new pellet");
+            Coordinate targetPellet = findFirstPellet(game);
+            if (targetPellet != null) {
+                this.setTargetCoordinate(targetPellet);
+                this.makePlan(game);
+                plan = this.getPlanToGetToTarget();
+                System.out.println("Plan set! Going to " + targetPellet.getXCoordinate() + ", " + targetPellet.getYCoordinate());
+            } else {
+                System.out.println("Error in finding target pellet.");
+                return Action.values()[this.getRandom().nextInt(Action.values().length)];
+            }
+        }
+        
+        // POP the next coordinate from the plan (removes it from stack)
+        Coordinate nextCoord = plan.pop();
+        
+        // Use Action.inferFromCoordinates to determine the movement direction
+        try {
+            System.out.println("Attempting to go to vertex " + nextCoord.getXCoordinate() + ", " + nextCoord.getYCoordinate());
+            return Action.inferFromCoordinates(currentPos, nextCoord);
+        } catch (Exception e) {
+            // Fallback to random movement if inferFromCoordinates fails
+            System.out.println("Error inferring action from coordinates: " + e.getMessage());
+            return Action.values()[this.getRandom().nextInt(Action.values().length)];
+        }
+    }
+
+    private Coordinate findFirstPellet(GameView game) {
+        for (int x = 0; x < game.getXBoardDimension(); x++) {
+            for (int y = 0; y < game.getYBoardDimension(); y++) {
+                Coordinate coord = new Coordinate(x, y);
+                if (game.getCell(coord).getCellState() == DefaultBoard.CellState.PELLET) {
+                    return coord;
+                }
+            }
+        }
+        return null; // No pellets found
     }
 
     @Override
