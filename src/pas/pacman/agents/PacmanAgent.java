@@ -21,6 +21,7 @@ import edu.bu.pas.pacman.utils.Coordinate;
 import edu.bu.pas.pacman.utils.Pair;
 import edu.bu.labs.stealth.graph.Vertex;
 import edu.bu.pas.pacman.game.DefaultBoard;
+import edu.bu.pas.pacman.game.entity.Entity;
 
 
 
@@ -120,6 +121,7 @@ public class PacmanAgent
         return validMoves;
     }
 
+    // Does a DFS search to the tgt coordinate.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src,
                                         final Coordinate tgt,
@@ -175,13 +177,18 @@ public class PacmanAgent
         return new Path<Coordinate>(src);
     }
 
-    // TODO
+    // Calculate's the plan the agent needs to do from their own coordinate to the tgt coordinate.
+    // Assumes that this agent has fields for the following:
+    // - tgt coordinate
+    // - plan (Stack<Coordinate>)
     @Override
     public void makePlan(final GameView game)
     {
         // This code assumes that the tgt Coordinate field IS NOT NULL.
         // Firstly, call the search agent.
-        Path<Coordinate> pathToTgt = graphSearch(game.getEntity(this.getPacmanID()).getCurrentCoordinate(), this.getTargetCoordinate(), game);
+        Path<Coordinate> pathToTgt = graphSearch(game.getEntity(this.getPacmanId()).getCurrentCoordinate(),
+                                                this.getTargetCoordinate(),
+                                                game);
 
         // Init a new Stack for the new plan.
         Stack<Coordinate> newPlan = new Stack<Coordinate>();
