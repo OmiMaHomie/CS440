@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
+import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.List;
@@ -21,7 +22,6 @@ import edu.bu.pas.pacman.graph.Path;
 import edu.bu.pas.pacman.graph.PelletGraph.PelletVertex;
 import edu.bu.pas.pacman.utils.Coordinate;
 import edu.bu.pas.pacman.utils.Pair;
-import edu.bu.labs.stealth.graph.Vertex;
 import edu.bu.pas.pacman.game.DefaultBoard;
 import edu.bu.pas.pacman.game.entity.Entity;
 
@@ -65,6 +65,35 @@ public class PacmanAgent
     public Set<PelletVertex> getOutoingNeighbors(final PelletVertex vertex,
                                                  final GameView game)
     {
+        // Set<PelletVertex> validVertices = new HashSet<PelletVertex>();
+        // Set<Coordinate> currentVertexCoords = vertex.getRemainingPelletCoordinates();
+
+        // // List out all possible actions.
+        // Action[] actions = {Action.EAST, Action.WEST, Action.NORTH, Action.SOUTH};
+
+        // for (Action action : actions) {
+        //     // If we can move a certain way, make a new PelletVertex and add it to the set.
+        //     Coordinate src = vertex.getPacmanCoordinate();
+        //     if (game.isLegalPacmanMove(src, action)) {
+        //         int x = src.getXCoordinate();
+        //         int y = src.getYCoordinate();
+                
+        //         // Check which direction to add.
+        //         if (game.isLegalPacmanMove(src, Action.EAST)) {
+        //             validVertices.removePellet(new Coordinate(x + 1, y));
+        //         }
+        //         if (game.isLegalPacmanMove(src, Action.WEST)) {
+        //             validVertices.removePellet(new Coordinate(x - 1, y));
+        //         }
+        //         if (game.isLegalPacmanMove(src, Action.NORTH)) {
+        //             validVertices.removePellet(new Coordinate(x, y - 1));
+        //         }
+        //         if (game.isLegalPacmanMove(src, Action.SOUTH)) {
+        //             validVertices.removePellet(new Coordinate(x, y + 1));
+        //         }
+        //     }
+        // }
+
         return null;
     }
 
@@ -123,59 +152,68 @@ public class PacmanAgent
         return validMoves;
     }
 
-    // Does a DFS search to the tgt coordinate.
+    // Does a BFS search to the tgt coordinate.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src,
                                         final Coordinate tgt,
                                         final GameView game)
     {
-        Stack<Coordinate> dfsStack = new Stack<>(); // stack for dfs queue
+        Queue<Coordinate> bfsQueue = new LinkedList<>(); // queue for bfs queue
         Set<Coordinate> visited = new HashSet<>(); // contains visited nodes
         Map<Coordinate, Coordinate> parents = new HashMap<>(); // Will help to backtrace the path to output path in correct order
 
-        // Init the DFS search
-        dfsStack.add(src);
+        // Init the BFS search
+        bfsQueue.add(src);
         visited.add(src);
         parents.put(src, null);
 
 
-        while(!dfsStack.isEmpty()){
-            // Get latest vertex from stack.
-            Coordinate currentVertex = dfsStack.pop();
+        while(!bfsQueue.isEmpty()){
+            // Get latest vertex from the queue.
+            Coordinate currentVertex = bfsQueue.poll();
             System.out.println("Current vertex is " + currentVertex);
 
-            // If we hit tgt, return the path (tgt --> src, it is reversed)
+            // If we hit tgt, return the path (src --> tgt, it is reversed)
             if (currentVertex.equals(tgt)) {
-                Path<Coordinate> path = null;
+                List<Coordinate> pathCoordinates = new ArrayList<>();
                 Coordinate v = currentVertex;
-                while (v != null) { //while have parent
-                    if (path == null) {
-                        path = new Path<>(v);
-                    } else {
-                        path = new Path<>(v, 1f, path);
-                    }
-                    v = parents.get(v); //getting parent node from the child
+                
+                // Collect coords from tgt --> src
+                while (v != null) {
+                    pathCoordinates.add(v);
+                    v = parents.get(v);
                 }
-
+                
+                // Build Path from src --> tgt
+                Path<Coordinate> path = null;
+                for (int i = pathCoordinates.size() - 1; i >= 0; i--) {
+                    Coordinate coord = pathCoordinates.get(i);
+                    if (path == null) {
+                        path = new Path<>(coord);
+                    } else {
+                        path = new Path<>(coord, 1f, path);
+                    }
+                }
+                
                 //
-                // This is the ideal RETURN PATH.
+                // IDEAL RETURN PATH
                 //
                 return path;
             } 
 
-            // Else, go through each potential path and add UNVISITED neighbors to stack.
+            // Else, go through each potential path and add UNVISITED neighbors to queue.
             Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
             for (Coordinate currentNeighbor : neighbors) {
                 if (!visited.contains(currentNeighbor)) {
                     visited.add(currentNeighbor);
-                    dfsStack.add(currentNeighbor);
+                    bfsQueue.add(currentNeighbor);
                     parents.put(currentNeighbor, currentVertex);
                 }
             }           
         }
 
         // SHOULDN'T EVER REACH THIS POINT.
-        System.out.println("If reached this point no dfs path found, I will return new path with just src vertex");
+        System.out.println("If reached this point no bfs path found, returning just the src vertex");
         return new Path<Coordinate>(src);
     }
 
@@ -199,8 +237,9 @@ public class PacmanAgent
             pathToTgt = pathToTgt.getParentPath();
         }
 
-        // Reverse the list and push to stack (STACK: tgt (bottom) --> src (top))
-        for (int i = tempPath.size() - 1; i >= 0; i--) {
+        // Push to stack by going through the list in reverse (STACK: tgt (bottom) --> 2nd to src (top))
+        // We skip 1st item since it is the src (moving src --> src is redundant).
+        for (int i = 0; i <= tempPath.size() - 2; i++) {
             Coordinate coord = tempPath.get(i);
             System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
             newPlan.push(coord);
