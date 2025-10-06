@@ -26,6 +26,10 @@ public class DepthThresholdedAlphaBetaAgent
     //
     public static final int DEFAULT_MAX_DEPTH = 3;
     private int maxDepth;
+
+    //
+    // Constructor(s)
+    //
     public DepthThresholdedAlphaBetaAgent(PlayerType myPlayerType)
     {
         super(myPlayerType);
@@ -174,5 +178,5 @@ public class DepthThresholdedAlphaBetaAgent
     }
 
     @Override
-    public void afterGameEnds(final RecursiveTicTacToeGameView game) {}
+    public void afterGameEnds(final RecursiveTicTacToeGameView game) { }
 }

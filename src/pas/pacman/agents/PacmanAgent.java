@@ -245,6 +245,7 @@ public class PacmanAgent
         }
     }
 
+    // Helper test method to find a pellet in map (goes u --> d, l --> r on the map)
     private Coordinate findFirstPellet(GameView game) {
         for (int x = 0; x < game.getXBoardDimension(); x++) {
             for (int y = 0; y < game.getYBoardDimension(); y++) {
