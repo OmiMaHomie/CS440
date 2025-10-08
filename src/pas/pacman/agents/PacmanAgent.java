@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
@@ -35,8 +36,8 @@ public class PacmanAgent
     //
     // Fields
     //
-
     private final Random random;
+    private Map<Pair<Coordinate, Coordinate>, Float> distanceCache; // Used to cache distances between coords.
     // final Stack<Coordinate> --> Plan (from SearchAgent)
     // final Coordinate --> tgt Coordinate (from SearchAgent)
 
@@ -50,6 +51,7 @@ public class PacmanAgent
     {
         super(myUnitId, pacmanId, ghostChaseRadius);
         this.random = new Random();
+        this.distanceCache = new HashMap<>();
     }
 
     //
@@ -75,20 +77,34 @@ public class PacmanAgent
         Set<Coordinate> remainingPellets = vertex.getRemainingPelletCoordinates();
         
         // For each pellet, we make a new vertex representing that we ate it.
-        // Will handle vertices that're impossible to reach in getEdgeWeight.
+        // Only add reachable pellets
         for (Coordinate pellet : remainingPellets) {
-            PelletVertex newVertex = vertex.removePellet(pellet);
-            neighbors.add(newVertex);
+            if (graphSearch(vertex.getPacmanCoordinate(), pellet, game) != null) {
+                neighbors.add(vertex.removePellet(pellet));
+            }
         }
         
         return neighbors;
     }
 
+    // Calculates the cost of moving from src --> dst vertices
+    // We query distanceCache that should've been made up in the A* search before.
     @Override
     public float getEdgeWeight(final PelletVertex src,
                                final PelletVertex dst)
-    {
-        return 1f;
+    {       
+        // tgt pellet is simply dst's pacman location
+        Coordinate tgtCoord = dst.getPacmanCoordinate();
+        
+        // SHOULDN'T HAPPEN, but only calls if dst is not valid.
+        if (tgtCoord == null) {
+            System.out.println("dst coord doesn't exist?");
+            return Float.MAX_VALUE;
+        }
+        
+        // Ret the cached distance. If it doesn't exist. Make a new key and set it to MAX
+        Pair<Coordinate, Coordinate> key = new Pair<>(src.getPacmanCoordinate(), tgtCoord);
+        return distanceCache.getOrDefault(key, Float.MAX_VALUE);
     }
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
@@ -113,19 +129,20 @@ public class PacmanAgent
         
         // Calculate MST cost of all remaining pellets
         // The heuristic is just the distance to reach the MST
-        float mstCost = calculateMST(remainingPellets, game);
+        float mstCost = calculateMST(src.getPacmanCoordinate(), remainingPellets, game);
         return mstCost;
     }
 
     // Helper method for getHeuristics
     // Calculate the MST cost of traversing through every pellet.
-    private float calculateMST(Set<Coordinate> pellets, GameView game) {
+    private float calculateMST(Coordinate pacmanPos, Set<Coordinate> pellets, GameView game) {
         // Ret 0 if no pellets
         if (pellets.size() <= 1) {
             return 0f;
         }
         
         List<Coordinate> pelletList = new ArrayList<>(pellets);
+        pelletList.add(pacmanPos);
         int n = pelletList.size();
         
         // Vars used for the MST
@@ -169,10 +186,105 @@ public class PacmanAgent
         return path != null ? path.getTrueCost() : Float.MAX_VALUE;
     }
 
+    // Makes a path to go through the entire maze to eat every single pellet in the quickest way possible.
+    // Uses the A* search
     @Override
     public Path<PelletVertex> findPathToEatAllPelletsTheFastest(final GameView game)
     {
-        return null;
+        // Pre compute all distance b4 A* search.
+        precomputeDistances(game);
+
+        // Get the init state
+        PelletVertex start = new PelletVertex(game);
+        
+        List<PelletVertex> pathSequence = new ArrayList<>();
+        pathSequence.add(start);
+        PelletVertex current = start;
+
+        // Always gonna go to the nearest pellet initally too        
+        // Keep eating pellets until none left
+        while (!current.getRemainingPelletCoordinates().isEmpty()) {
+            Coordinate currentPos = current.getPacmanCoordinate();
+            Set<Coordinate> remainingPellets = current.getRemainingPelletCoordinates();
+            
+            // Find the closest reachable pellet
+            Coordinate closestPellet = null;
+            float shortestDistance = Float.MAX_VALUE;
+            
+            for (Coordinate pellet : remainingPellets) {
+                Path<Coordinate> path = graphSearch(currentPos, pellet, game);
+                if (path != null) {
+                    float distance = path.getTrueCost();
+                    if (distance < shortestDistance) {
+                        shortestDistance = distance;
+                        closestPellet = pellet;
+                    }
+                }
+            }
+            
+            // SHOULDN'T HAPPEN, but this is what happens if we can't find a path.
+            if (closestPellet == null) {
+                System.out.println("No possible path from " + currentPos);
+                break;
+            }
+            
+            // Move to the next selected pellet to eat it
+            current = current.removePellet(closestPellet);
+            pathSequence.add(current);
+            
+            System.out.println("Pellet @ " + closestPellet + " eaten, " + current.getRemainingPelletCoordinates().size() + " pellets remaining");
+        }
+        
+        // Convert into a path from src --> end
+        Path<PelletVertex> resultPath = null;
+        for (int i = pathSequence.size() - 1; i >= 0; i--) {
+            PelletVertex vertex = pathSequence.get(i);
+            if (resultPath == null) {
+                resultPath = new Path<>(vertex);
+            } else {
+                resultPath = new Path<>(vertex, 1f, resultPath);
+            }
+        }
+        
+        System.out.println("Took" + (pathSequence.size() - 1) + " moves to eat all pellets");
+        
+        return resultPath;
+    }
+
+    // Helper method to precompute all distances between positions
+    // Called by findPathToEatAllPelletsTheFastest, but primarily queried within getEdgeWeights
+    private void precomputeDistances(GameView game) {
+        distanceCache.clear();
+        
+        // Get all possible pellet & pacman locations
+        PelletVertex start = new PelletVertex(game);
+        Set<Coordinate> allPellets = start.getRemainingPelletCoordinates();
+        Coordinate pacmanStart = start.getPacmanCoordinate();
+        
+        // From prev locations, compute their path
+        for (Coordinate pellet : allPellets) {
+            Path<Coordinate> path = graphSearch(pacmanStart, pellet, game);
+            if (path != null) {
+                distanceCache.put(new Pair<>(pacmanStart, pellet), path.getTrueCost());
+            }
+        }
+        
+        // Now from prev paths, compute their distance
+        List<Coordinate> pelletList = new ArrayList<>(allPellets);
+        for (int i = 0; i < pelletList.size(); i++) {
+            for (int j = i + 1; j < pelletList.size(); j++) {
+                Coordinate pellet1 = pelletList.get(i);
+                Coordinate pellet2 = pelletList.get(j);
+                
+                Path<Coordinate> path = graphSearch(pellet1, pellet2, game);
+                if (path != null) {
+                    distanceCache.put(new Pair<>(pellet1, pellet2), path.getTrueCost());
+                    distanceCache.put(new Pair<>(pellet2, pellet1), path.getTrueCost()); // for symmetry
+                }
+            }
+        }
+        
+        System.out.println("Cached a total of " + distanceCache.size() + " distances");
     }
 
     // Gets all possible neighboring moves from a src coord.
@@ -229,7 +341,7 @@ public class PacmanAgent
         while(!bfsQueue.isEmpty()){
             // Get latest vertex from the queue.
             Coordinate currentVertex = bfsQueue.poll();
-            System.out.println("Current vertex is " + currentVertex);
+            //System.out.println("Current vertex is " + currentVertex);
 
             // If we hit tgt, return the path (src --> tgt, it is reversed)
             if (currentVertex.equals(tgt)) {
@@ -299,7 +411,7 @@ public class PacmanAgent
         // We skip 1st item since it is the src (moving src --> src is redundant).
         for (int i = 0; i <= tempPath.size() - 2; i++) {
             Coordinate coord = tempPath.get(i);
-            System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
+            //System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
             newPlan.push(coord);
         }
 
@@ -313,36 +425,93 @@ public class PacmanAgent
         Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
         Stack<Coordinate> plan = this.getPlanToGetToTarget();
         
-        // If no plan or plan is empty, find a pellet and create plan
+        // No plan, use A*
         if (plan == null || plan.isEmpty()) {
-            System.out.println("Plan is empty, calculating new pellet");
-            Coordinate targetPellet = findFirstPellet(game);
-            if (targetPellet != null) {
-                this.setTargetCoordinate(targetPellet);
-                this.makePlan(game);
+            System.out.println("Plan's empty, using A*");
+            
+            // Calculate path of all vertices
+            Path<PelletVertex> optimalPath = findPathToEatAllPelletsTheFastest(game);
+            
+            if (optimalPath != null) {
+                // Path<PelletVertex> --> Path<Coordinate>
+                Stack<Coordinate> newPlan = convertPelletPathToCoordinatePlan(optimalPath, game);
+                this.setPlanToGetToTarget(newPlan);
                 plan = this.getPlanToGetToTarget();
-                System.out.println("Plan set! Going to " + targetPellet.getXCoordinate() + ", " + targetPellet.getYCoordinate());
+
+                System.out.println("Total moves should be " + (newPlan.size()));
             } else {
-                System.out.println("Error in finding target pellet.");
-                return Action.values()[this.getRandom().nextInt(Action.values().length)];
+                // no path to tgt
+                Coordinate targetPellet = findFirstPellet(game);
+
+                if (targetPellet != null) {
+                    this.setTargetCoordinate(targetPellet);
+                    this.makePlan(game);
+                    plan = this.getPlanToGetToTarget();
+                } else {
+                    // no tgt
+                    return Action.values()[this.getRandom().nextInt(Action.values().length)];
+                }
             }
         }
         
-        // POP the next coordinate from the plan (removes it from stack)
+        // POP coord from plan
         Coordinate nextCoord = plan.pop();
         
-        // Use Action.inferFromCoordinates to determine the movement direction
+        // Go to next coordinate
         try {
-            System.out.println("Attempting to go to vertex " + nextCoord.getXCoordinate() + ", " + nextCoord.getYCoordinate());
+            System.out.println("Going to " + nextCoord.getXCoordinate() + ", " + nextCoord.getYCoordinate());
+
             return Action.inferFromCoordinates(currentPos, nextCoord);
         } catch (Exception e) {
-            // Fallback to random movement if inferFromCoordinates fails
-            System.out.println("Error inferring action from coordinates: " + e.getMessage());
+            System.out.println("Can't infer coordinates properly " + e.getMessage());
+            
             return Action.values()[this.getRandom().nextInt(Action.values().length)];
         }
     }
 
-    // Helper test method to find a pellet in map (goes u --> d, l --> r on the map)
+    // Helper method to convert PelletVertex path to Coordinate plan
+    private Stack<Coordinate> convertPelletPathToCoordinatePlan(Path<PelletVertex> pelletPath, GameView game) {
+        Stack<Coordinate> coordinatePlan = new Stack<>();
+        
+        // Get the seq of pellet vertices
+        List<PelletVertex> vertexSequence = new ArrayList<>();
+        Path<PelletVertex> current = pelletPath;
+        while (current != null) {
+            vertexSequence.add(current.getDestination());
+            current = current.getParentPath();
+        }
+        
+        // FOR EACH pair of pellet vertices, find path between pos.
+        for (int i = 0; i < vertexSequence.size() - 1; i++) {
+            PelletVertex currentVertex = vertexSequence.get(i);
+            PelletVertex nextVertex = vertexSequence.get(i + 1);
+            
+            Coordinate startCoord = currentVertex.getPacmanCoordinate();
+            Coordinate endCoord = nextVertex.getPacmanCoordinate();
+            
+            // Find path between the 2 coords
+            Path<Coordinate> pathSegment = graphSearch(startCoord, endCoord, game);
+            
+            if (pathSegment != null) {
+                // Turn path to coordinates
+                List<Coordinate> segmentCoords = new ArrayList<>();
+                Path<Coordinate> segmentCurrent = pathSegment;
+                while (segmentCurrent != null) {
+                    segmentCoords.add(segmentCurrent.getDestination());
+                    segmentCurrent = segmentCurrent.getParentPath();
+                }
+                
+                // Reverse & add to plan
+                for (int j = segmentCoords.size() - 2; j >= 0; j--) {
+                    coordinatePlan.push(segmentCoords.get(j));
+                }
+            }
+        }
+        
+        return coordinatePlan;
+    }
+
+    // Helper test method to find a pellet in map (goes u --> d first, then l --> r on the map)
     private Coordinate findFirstPellet(GameView game) {
         for (int x = 0; x < game.getXBoardDimension(); x++) {
             for (int y = 0; y < game.getYBoardDimension(); y++) {
@@ -352,11 +521,11 @@ public class PacmanAgent
                 }
             }
         }
-        return null; // No pellets found
+
+        // SHOULDN'T HAPPEN as long as there's pellets in game.
+        return null;
     }
 
     @Override
-    public void afterGameEnds(final GameView game)
-    {
-    }
+    public void afterGameEnds(final GameView game) { }
 }
