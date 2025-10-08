@@ -88,28 +88,20 @@ public class PacmanAgent
     }
 
     // Calculates the cost of moving from src --> dst vertices
-    // We query distanceCache that should've been made up in the A* search before.
+    // Isn't rly used for now.
     @Override
-    public float getEdgeWeight(final PelletVertex src,
-                               final PelletVertex dst)
-    {       
-        // tgt pellet is simply dst's pacman location
-        Coordinate tgtCoord = dst.getPacmanCoordinate();
+    public float getEdgeWeight(final PelletVertex src, final PelletVertex dst) {       
+        Coordinate srcCoord = src.getPacmanCoordinate();
+        Coordinate dstCoord = dst.getPacmanCoordinate();        
         
-        // SHOULDN'T HAPPEN, but only calls if dst is not valid.
-        if (tgtCoord == null) {
-            System.out.println("dst coord doesn't exist?");
-            return Float.MAX_VALUE;
-        }
-        
-        // Ret the cached distance. If it doesn't exist. Make a new key and set it to MAX
-        Pair<Coordinate, Coordinate> key = new Pair<>(src.getPacmanCoordinate(), tgtCoord);
-        Float weight = distanceCache.getOrDefault(key, Float.MAX_VALUE);
-        return weight;  
+        int manhattanDist = Math.abs(srcCoord.getXCoordinate() - dstCoord.getXCoordinate()) 
+                            + Math.abs(srcCoord.getYCoordinate() - dstCoord.getYCoordinate());
+        return manhattanDist;    
     }
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
     // For now we simply return the # of pellets (the best-case senario, as # of pellets could be = # of moves needed)
+    // Also rly isn't being used for now.
     @Override
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
@@ -118,13 +110,11 @@ public class PacmanAgent
     }
 
     // Makes a path to go through the entire maze to eat every single pellet in the quickest way possible.
-    // Uses the A* search
+    // Uses a greedy first-pellet approach
+    // Will implement A* later.
     @Override
     public Path<PelletVertex> findPathToEatAllPelletsTheFastest(final GameView game)
     {
-        // Pre compute all distance b4 A* search.
-        precomputeDistances(game);
-
         // Get the init state
         PelletVertex start = new PelletVertex(game);
         
@@ -182,43 +172,6 @@ public class PacmanAgent
         return resultPath;
     }
 
-    // Helper method to precompute all distances between positions
-    // Called by findPathToEatAllPelletsTheFastest, but primarily queried within getEdgeWeights
-    private void precomputeDistances(GameView game) {
-        distanceCache.clear();
-        
-        // Get all pellet location including pacman location
-        PelletVertex start = new PelletVertex(game);
-        Set<Coordinate> allPellets = start.getRemainingPelletCoordinates();
-        Coordinate pacmanStart = start.getPacmanCoordinate();
-        
-        allPellets.add(pacmanStart);
-        
-        // Convert to list for easier iteration
-        List<Coordinate> positionList = new ArrayList<>(allPellets);
-        
-        // Compute distances between all pairs of positions
-        for (int i = 0; i < positionList.size(); i++) {
-            for (int j = i; j < positionList.size(); j++) {
-                Coordinate pos1 = positionList.get(i);
-                Coordinate pos2 = positionList.get(j);
-                
-                // Skip if its just itself
-                if (pos1.equals(pos2)) {
-                    continue;
-                }
-                
-                Path<Coordinate> path = graphSearch(pos1, pos2, game);
-                if (path != null) {
-                    float distance = path.getTrueCost();
-                    distanceCache.put(new Pair<>(pos1, pos2), distance);
-                    distanceCache.put(new Pair<>(pos2, pos1), distance); // for symmetry
-                }
-            }
-        }
-        
-        System.out.println("Cached " + distanceCache.size() + " distances between " + allPellets.size() + " positions");
-    }
     // Gets all possible neighboring moves from a src coord.
     @Override
     public Set<Coordinate> getOutgoingNeighbors(final Coordinate src,
