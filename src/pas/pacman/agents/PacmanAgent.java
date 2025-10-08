@@ -61,40 +61,26 @@ public class PacmanAgent
     // Methods
     //
 
+    // Gets all possible vertices of pellets eaten from an inital vertex source. DOESN'T check the path's feasibility.
     @Override
     public Set<PelletVertex> getOutoingNeighbors(final PelletVertex vertex,
                                                  final GameView game)
     {
-        // Set<PelletVertex> validVertices = new HashSet<PelletVertex>();
-        // Set<Coordinate> currentVertexCoords = vertex.getRemainingPelletCoordinates();
-
-        // // List out all possible actions.
-        // Action[] actions = {Action.EAST, Action.WEST, Action.NORTH, Action.SOUTH};
-
-        // for (Action action : actions) {
-        //     // If we can move a certain way, make a new PelletVertex and add it to the set.
-        //     Coordinate src = vertex.getPacmanCoordinate();
-        //     if (game.isLegalPacmanMove(src, action)) {
-        //         int x = src.getXCoordinate();
-        //         int y = src.getYCoordinate();
-                
-        //         // Check which direction to add.
-        //         if (game.isLegalPacmanMove(src, Action.EAST)) {
-        //             validVertices.removePellet(new Coordinate(x + 1, y));
-        //         }
-        //         if (game.isLegalPacmanMove(src, Action.WEST)) {
-        //             validVertices.removePellet(new Coordinate(x - 1, y));
-        //         }
-        //         if (game.isLegalPacmanMove(src, Action.NORTH)) {
-        //             validVertices.removePellet(new Coordinate(x, y - 1));
-        //         }
-        //         if (game.isLegalPacmanMove(src, Action.SOUTH)) {
-        //             validVertices.removePellet(new Coordinate(x, y + 1));
-        //         }
-        //     }
-        // }
-
-        return null;
+        //
+        // RETURN VAR
+        //
+        Set<PelletVertex> neighbors = new HashSet<>();
+    
+        Set<Coordinate> remainingPellets = vertex.getRemainingPelletCoordinates();
+        
+        // For each pellet, we make a new vertex representing that we ate it.
+        // Will handle vertices that're impossible to reach in getEdgeWeight.
+        for (Coordinate pellet : remainingPellets) {
+            PelletVertex newVertex = vertex.removePellet(pellet);
+            neighbors.add(newVertex);
+        }
+        
+        return neighbors;
     }
 
     @Override
@@ -104,11 +90,34 @@ public class PacmanAgent
         return 1f;
     }
 
+    // So basically this method 
     @Override
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
     {
-        return 1f;
+        Set<Coordinate> remainingPellets = src.getRemainingPelletCoordinates();
+    
+        // If no pellets left, ret 0
+        if (remainingPellets.isEmpty()) {
+            return 0f;
+        }
+        
+        // If only one pellet left, ret the distance to it
+        if (remainingPellets.size() == 1) {
+            Coordinate lastPellet = remainingPellets.iterator().next();
+            Path<Coordinate> path = graphSearch(src.getPacmanCoordinate(), lastPellet, game);
+            return path != null ? path.getTrueCost() : Float.MAX_VALUE;
+        }
+        
+        // Calculate MST cost of all remaining pellets
+        float mstCost = calculateMSTCost(remainingPellets, game);
+        
+        // Find minimum distance from Pacman to any pellet
+        float minDistanceToPellet = findMinDistanceToAnyPellet(src.getPacmanCoordinate(), 
+                                                            remainingPellets, game);
+        
+        // Heuristic: distance to reach the MST + cost to traverse the MST
+        return minDistanceToPellet + mstCost;
     }
 
     @Override
@@ -213,8 +222,8 @@ public class PacmanAgent
         }
 
         // SHOULDN'T EVER REACH THIS POINT.
-        System.out.println("If reached this point no bfs path found, returning just the src vertex");
-        return new Path<Coordinate>(src);
+        System.out.println("If reached this point no bfs path found, returning null");
+        return null;
     }
 
     // Calculate's the plan the agent needs to do from their own coordinate to the tgt coordinate.
