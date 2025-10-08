@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
@@ -91,6 +92,7 @@ public class PacmanAgent
     }
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
+    // Uses a MST to calculate the best-case path to traverse through all pellets
     @Override
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
@@ -110,32 +112,31 @@ public class PacmanAgent
         }
         
         // Calculate MST cost of all remaining pellets
-        float mstCost = calculateMSTCost(remainingPellets, game);
-        
-        // Find minimum distance from Pacman to any pellet
-        float minDistanceToPellet = findMinDistanceToAnyPellet(src.getPacmanCoordinate(), 
-                                                            remainingPellets, game);
-        
-        // Heuristic: distance to reach the MST + cost to traverse the MST
-        return minDistanceToPellet + mstCost;
+        // The heuristic is just the distance to reach the MST
+        float mstCost = calculateMST(remainingPellets, game);
+        return mstCost;
     }
 
-    private float calculateMSTCost(Set<Coordinate> pellets, GameView game) {
-        if (pellets.size() <= 1) return 0f;
+    // Helper method for getHeuristics
+    // Calculate the MST cost of traversing through every pellet.
+    private float calculateMST(Set<Coordinate> pellets, GameView game) {
+        // Ret 0 if no pellets
+        if (pellets.size() <= 1) {
+            return 0f;
+        }
         
         List<Coordinate> pelletList = new ArrayList<>(pellets);
         int n = pelletList.size();
         
-        // Prim's algorithm for MST
+        // Vars used for the MST
         boolean[] inMST = new boolean[n];
         float[] minEdge = new float[n];
         Arrays.fill(minEdge, Float.MAX_VALUE);
         minEdge[0] = 0f;
-        
         float totalCost = 0f;
         
         for (int i = 0; i < n; i++) {
-            // Find vertex with minimum edge cost not in MST
+            // Find a vertex with min. cost thats NOT in MST currently
             int u = -1;
             for (int j = 0; j < n; j++) {
                 if (!inMST[j] && (u == -1 || minEdge[j] < minEdge[u])) {
@@ -146,7 +147,7 @@ public class PacmanAgent
             inMST[u] = true;
             totalCost += minEdge[u];
             
-            // Update minEdge for adjacent vertices
+            // Update minEdge for adj vertices
             for (int v = 0; v < n; v++) {
                 if (!inMST[v]) {
                     float distance = getDistanceBetweenPellets(pelletList.get(u), 
@@ -161,24 +162,8 @@ public class PacmanAgent
         return totalCost;
     }
 
-    private float findMinDistanceToAnyPellet(Coordinate pacmanPos, 
-                                        Set<Coordinate> pellets, 
-                                        GameView game) {
-        float minDistance = Float.MAX_VALUE;
-        
-        for (Coordinate pellet : pellets) {
-            Path<Coordinate> path = graphSearch(pacmanPos, pellet, game);
-            if (path != null) {
-                float distance = path.getTrueCost();
-                if (distance < minDistance) {
-                    minDistance = distance;
-                }
-            }
-        }
-        
-        return minDistance != Float.MAX_VALUE ? minDistance : 0f;
-    }
-
+    // Helper method for calculateMST
+    // Simply calls graphSearch from pellet1 --> pellet2 and returns its path cost
     private float getDistanceBetweenPellets(Coordinate pellet1, Coordinate pellet2, GameView game) {
         Path<Coordinate> path = graphSearch(pellet1, pellet2, game);
         return path != null ? path.getTrueCost() : Float.MAX_VALUE;
