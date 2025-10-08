@@ -37,7 +37,7 @@ public class PacmanAgent
     // Fields
     //
     private final Random random;
-    private Map<Coordinate, Set<Coordinate>> validCache = new HashMap<>(); // All valid moves from the init state.
+    private Set<Coordinate> allReachableCoords = null; // All valid moves from the init state.
     private Map<Pair<Coordinate, Coordinate>, Float> distanceCache = new HashMap<>(); // Used to cache distances between coords.
     // final Stack<Coordinate> --> Plan (from SearchAgent)
     // final Coordinate --> tgt Coordinate (from SearchAgent)
@@ -293,12 +293,11 @@ public class PacmanAgent
     @Override
     public Set<Coordinate> getOutgoingNeighbors(final Coordinate src, final GameView game)
     {
-        // Return cache if alr made
-        // Removes src from return 
-        if (validCache.containsKey(src)) {
-            Set<Coordinate> cachedResult = new HashSet<>(validCache.get(src));
-            cachedResult.remove(src);
-            return cachedResult;
+        // If we already have the global cache, just return it (excluding src)
+        if (allReachableCoords != null) {
+            Set<Coordinate> result = new HashSet<>(allReachableCoords);
+            result.remove(src);
+            return result;
         }
 
         // Do the BFS search.
@@ -328,10 +327,10 @@ public class PacmanAgent
             }
         }
 
-        // Cache the result + src
-        validCache.put(src, new HashSet<>(valid));
+        // Cache the global set
+        allReachableCoords = new HashSet<>(valid);
         
-        // Return the resultant set EXLCUDING src
+        // Return the resultant set EXCLUDING src
         Set<Coordinate> result = new HashSet<>(valid);
         result.remove(src);
         return result;
