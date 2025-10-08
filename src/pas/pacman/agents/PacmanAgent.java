@@ -37,7 +37,8 @@ public class PacmanAgent
     // Fields
     //
     private final Random random;
-    private Map<Pair<Coordinate, Coordinate>, Float> distanceCache; // Used to cache distances between coords.
+    private Map<Coordinate, Set<Coordinate>> validCache = new HashMap<>(); // All valid moves from the init state.
+    private Map<Pair<Coordinate, Coordinate>, Float> distanceCache = new HashMap<>(); // Used to cache distances between coords.
     // final Stack<Coordinate> --> Plan (from SearchAgent)
     // final Coordinate --> tgt Coordinate (from SearchAgent)
 
@@ -51,7 +52,6 @@ public class PacmanAgent
     {
         super(myUnitId, pacmanId, ghostChaseRadius);
         this.random = new Random();
-        this.distanceCache = new HashMap<>();
     }
 
     //
@@ -287,39 +287,74 @@ public class PacmanAgent
         System.out.println("Cached a total of " + distanceCache.size() + " distances");
     }
 
-    // Gets all possible neighboring moves from a src coord.
+    // Gets ALL POSSIBLE, VALID coords we can reach from a src coord.
+    // We essentially do 1 big BFS search. Should only occur once in the game tho, every other time it should return cached location.
+    // Caches all valid moves from src INCLUDING src.
     @Override
-    public Set<Coordinate> getOutgoingNeighbors(final Coordinate src,
-                                                final GameView game)
+    public Set<Coordinate> getOutgoingNeighbors(final Coordinate src, final GameView game)
     {
-        Set<Coordinate> validMoves = new HashSet<Coordinate>();
+        // Return cache if alr made
+        // Removes src from return 
+        if (validCache.containsKey(src)) {
+            Set<Coordinate> cachedResult = new HashSet<>(validCache.get(src));
+            cachedResult.remove(src);
+            return cachedResult;
+        }
 
-        // List out all possible actions.
+        // Do the BFS search.
+        Set<Coordinate> valid = new HashSet<>();
+        Queue<Coordinate> moveNext = new LinkedList<>();
+        Set<Coordinate> visited = new HashSet<>();
         Action[] actions = {Action.EAST, Action.WEST, Action.NORTH, Action.SOUTH};
 
-        for (Action action : actions) {
-            // If we can move a certain way, add it to the set.
-            if (game.isLegalPacmanMove(src, action)) {
-                int x = src.getXCoordinate();
-                int y = src.getYCoordinate();
-                
-                // Check which direction to add.
-                if (game.isLegalPacmanMove(src, Action.EAST)) {
-                    validMoves.add(new Coordinate(x + 1, y));
-                }
-                if (game.isLegalPacmanMove(src, Action.WEST)) {
-                    validMoves.add(new Coordinate(x - 1, y));
-                }
-                if (game.isLegalPacmanMove(src, Action.NORTH)) {
-                    validMoves.add(new Coordinate(x, y - 1));
-                }
-                if (game.isLegalPacmanMove(src, Action.SOUTH)) {
-                    validMoves.add(new Coordinate(x, y + 1));
+        moveNext.add(src);
+        visited.add(src);
+        valid.add(src); // src included in the search, will later be removed on return
+
+        while (!moveNext.isEmpty()) {
+            Coordinate currentCoord = moveNext.poll();
+            
+            for (Action action : actions) {
+                if (game.isLegalPacmanMove(currentCoord, action)) {
+                    Coordinate neighbor = getNeighborCoordinate(currentCoord, action);
+                    
+                    // Don't add node alr visited.
+                    if (!visited.contains(neighbor)) {
+                        visited.add(neighbor);
+                        valid.add(neighbor);
+                        moveNext.add(neighbor);
+                    }
                 }
             }
         }
 
-        return validMoves;
+        // Cache the result + src
+        validCache.put(src, new HashSet<>(valid));
+        
+        // Return the resultant set EXLCUDING src
+        Set<Coordinate> result = new HashSet<>(valid);
+        result.remove(src);
+        return result;
+    }
+
+    // Helper method for getOutgoingNeighbors(Coord)
+    // Gets the resulting coord after moving.
+    private Coordinate getNeighborCoordinate(Coordinate current, Action action) {
+        int x = current.getXCoordinate();
+        int y = current.getYCoordinate();
+        
+        switch (action) {
+            case EAST:
+                return new Coordinate(x + 1, y);
+            case WEST:
+                return new Coordinate(x - 1, y);
+            case NORTH:
+                return new Coordinate(x, y - 1);
+            case SOUTH:
+                return new Coordinate(x, y + 1);
+            default:
+                return current; // SHOULDN'T EVER HAPPEN
+        }
     }
 
     // Does a BFS search to the tgt coordinate.
@@ -422,108 +457,7 @@ public class PacmanAgent
     @Override
     public Action makeMove(final GameView game)
     {
-        Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
-        Stack<Coordinate> plan = this.getPlanToGetToTarget();
-        
-        // No plan, use A*
-        if (plan == null || plan.isEmpty()) {
-            System.out.println("Plan's empty, using A*");
-            
-            // Calculate path of all vertices
-            Path<PelletVertex> optimalPath = findPathToEatAllPelletsTheFastest(game);
-            
-            if (optimalPath != null) {
-                // Path<PelletVertex> --> Path<Coordinate>
-                Stack<Coordinate> newPlan = convertPelletPathToCoordinatePlan(optimalPath, game);
-                this.setPlanToGetToTarget(newPlan);
-                plan = this.getPlanToGetToTarget();
-
-                System.out.println("Total moves should be " + (newPlan.size()));
-            } else {
-                // no path to tgt
-                Coordinate targetPellet = findFirstPellet(game);
-
-                if (targetPellet != null) {
-                    this.setTargetCoordinate(targetPellet);
-                    this.makePlan(game);
-                    plan = this.getPlanToGetToTarget();
-                } else {
-                    // no tgt
-                    return Action.values()[this.getRandom().nextInt(Action.values().length)];
-                }
-            }
-        }
-        
-        // POP coord from plan
-        Coordinate nextCoord = plan.pop();
-        
-        // Go to next coordinate
-        try {
-            System.out.println("Going to " + nextCoord.getXCoordinate() + ", " + nextCoord.getYCoordinate());
-
-            return Action.inferFromCoordinates(currentPos, nextCoord);
-        } catch (Exception e) {
-            System.out.println("Can't infer coordinates properly " + e.getMessage());
-            
-            return Action.values()[this.getRandom().nextInt(Action.values().length)];
-        }
-    }
-
-    // Helper method to convert PelletVertex path to Coordinate plan
-    private Stack<Coordinate> convertPelletPathToCoordinatePlan(Path<PelletVertex> pelletPath, GameView game) {
-        Stack<Coordinate> coordinatePlan = new Stack<>();
-        
-        // Get the seq of pellet vertices
-        List<PelletVertex> vertexSequence = new ArrayList<>();
-        Path<PelletVertex> current = pelletPath;
-        while (current != null) {
-            vertexSequence.add(current.getDestination());
-            current = current.getParentPath();
-        }
-        
-        // FOR EACH pair of pellet vertices, find path between pos.
-        for (int i = 0; i < vertexSequence.size() - 1; i++) {
-            PelletVertex currentVertex = vertexSequence.get(i);
-            PelletVertex nextVertex = vertexSequence.get(i + 1);
-            
-            Coordinate startCoord = currentVertex.getPacmanCoordinate();
-            Coordinate endCoord = nextVertex.getPacmanCoordinate();
-            
-            // Find path between the 2 coords
-            Path<Coordinate> pathSegment = graphSearch(startCoord, endCoord, game);
-            
-            if (pathSegment != null) {
-                // Turn path to coordinates
-                List<Coordinate> segmentCoords = new ArrayList<>();
-                Path<Coordinate> segmentCurrent = pathSegment;
-                while (segmentCurrent != null) {
-                    segmentCoords.add(segmentCurrent.getDestination());
-                    segmentCurrent = segmentCurrent.getParentPath();
-                }
-                
-                // Reverse & add to plan
-                for (int j = segmentCoords.size() - 2; j >= 0; j--) {
-                    coordinatePlan.push(segmentCoords.get(j));
-                }
-            }
-        }
-        
-        return coordinatePlan;
-    }
-
-    // Helper test method to find a pellet in map (goes u --> d first, then l --> r on the map)
-    private Coordinate findFirstPellet(GameView game) {
-        for (int x = 0; x < game.getXBoardDimension(); x++) {
-            for (int y = 0; y < game.getYBoardDimension(); y++) {
-                Coordinate coord = new Coordinate(x, y);
-                if (game.getCell(coord).getCellState() == DefaultBoard.CellState.PELLET) {
-                    return coord;
-                }
-            }
-        }
-
-        // SHOULDN'T HAPPEN as long as there's pellets in game.
-        return null;
+        return Action.values()[this.getRandom().nextInt(Action.values().length)];
     }
 
     @Override
