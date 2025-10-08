@@ -108,29 +108,12 @@ public class PacmanAgent
     }
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
-    // Uses a MST to calculate the best-case path to traverse through all pellets
+    // For now we simply return the # of pellets (the best-case senario, as # of pellets could be = # of moves needed)
     @Override
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
     {
-        Set<Coordinate> remainingPellets = src.getRemainingPelletCoordinates();
-    
-        // If no pellets left, ret 0
-        if (remainingPellets.isEmpty()) {
-            return 0f;
-        }
-        
-        // If only one pellet left, ret the distance to it
-        if (remainingPellets.size() == 1) {
-            Coordinate lastPellet = remainingPellets.iterator().next();
-            Path<Coordinate> path = graphSearch(src.getPacmanCoordinate(), lastPellet, game);
-            return path != null ? path.getTrueCost() : Float.MAX_VALUE;
-        }
-        
-        // Calculate MST cost of all remaining pellets
-        // The heuristic is just the distance to reach the MST
-        float mstCost = calculateMST(src.getPacmanCoordinate(), remainingPellets, game);
-        return mstCost;
+        return src.getRemainingPelletCoordinates().size();
     }
 
     // Helper method for getHeuristics
@@ -419,6 +402,7 @@ public class PacmanAgent
         this.setPlanToGetToTarget(newPlan);
     }
 
+    // Calls all the method we made previously to traverse maze.
     @Override
     public Action makeMove(final GameView game)
     {
@@ -449,7 +433,6 @@ public class PacmanAgent
                     plan = this.getPlanToGetToTarget();
                 } else {
                     // no tgt
-                    return Action.values()[this.getRandom().nextInt(Action.values().length)];
                 }
             }
         }
