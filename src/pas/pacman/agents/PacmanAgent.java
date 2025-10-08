@@ -90,7 +90,7 @@ public class PacmanAgent
         return 1f;
     }
 
-    // So basically this method 
+    // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
     @Override
     public float getHeuristic(final PelletVertex src,
                               final GameView game)
@@ -118,6 +118,70 @@ public class PacmanAgent
         
         // Heuristic: distance to reach the MST + cost to traverse the MST
         return minDistanceToPellet + mstCost;
+    }
+
+    private float calculateMSTCost(Set<Coordinate> pellets, GameView game) {
+        if (pellets.size() <= 1) return 0f;
+        
+        List<Coordinate> pelletList = new ArrayList<>(pellets);
+        int n = pelletList.size();
+        
+        // Prim's algorithm for MST
+        boolean[] inMST = new boolean[n];
+        float[] minEdge = new float[n];
+        Arrays.fill(minEdge, Float.MAX_VALUE);
+        minEdge[0] = 0f;
+        
+        float totalCost = 0f;
+        
+        for (int i = 0; i < n; i++) {
+            // Find vertex with minimum edge cost not in MST
+            int u = -1;
+            for (int j = 0; j < n; j++) {
+                if (!inMST[j] && (u == -1 || minEdge[j] < minEdge[u])) {
+                    u = j;
+                }
+            }
+            
+            inMST[u] = true;
+            totalCost += minEdge[u];
+            
+            // Update minEdge for adjacent vertices
+            for (int v = 0; v < n; v++) {
+                if (!inMST[v]) {
+                    float distance = getDistanceBetweenPellets(pelletList.get(u), 
+                                                            pelletList.get(v), game);
+                    if (distance < minEdge[v]) {
+                        minEdge[v] = distance;
+                    }
+                }
+            }
+        }
+        
+        return totalCost;
+    }
+
+    private float findMinDistanceToAnyPellet(Coordinate pacmanPos, 
+                                        Set<Coordinate> pellets, 
+                                        GameView game) {
+        float minDistance = Float.MAX_VALUE;
+        
+        for (Coordinate pellet : pellets) {
+            Path<Coordinate> path = graphSearch(pacmanPos, pellet, game);
+            if (path != null) {
+                float distance = path.getTrueCost();
+                if (distance < minDistance) {
+                    minDistance = distance;
+                }
+            }
+        }
+        
+        return minDistance != Float.MAX_VALUE ? minDistance : 0f;
+    }
+
+    private float getDistanceBetweenPellets(Coordinate pellet1, Coordinate pellet2, GameView game) {
+        Path<Coordinate> path = graphSearch(pellet1, pellet2, game);
+        return path != null ? path.getTrueCost() : Float.MAX_VALUE;
     }
 
     @Override
