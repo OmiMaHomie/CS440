@@ -101,6 +101,7 @@ public class PacmanAgent
     // For now we simply return the # of pellets (the best-case senario, as # of pellets could be = # of moves needed)
     @Override
     public float getHeuristic(final PelletVertex src, final GameView game) {
+        //System.out.println("h is " + src.getRemainingPelletCoordinates().size());
         return src.getRemainingPelletCoordinates().size();
     }
 
@@ -115,6 +116,7 @@ public class PacmanAgent
         public Node parent = null;
         public Float g = 0f;
         public Float h = 0f;
+        public final String stateKey;
         // f is just g + h
 
         //
@@ -122,6 +124,7 @@ public class PacmanAgent
         //
         public Node(PelletVertex vertex) {
             this.vertex = vertex;
+            this.stateKey = generateStateKey(vertex);
         }
 
         //
@@ -144,13 +147,41 @@ public class PacmanAgent
             }
             
             // Explicitly turn obj to a node, now that we know its a node, and check its the vertices are the same.
+            // Manually check if the pacman coords & set of pellet coords r the same.
             Node node = (Node) obj;
-            return this.vertex.equals(node.vertex);
+            return this.vertex.getPacmanCoordinate().equals(node.vertex.getPacmanCoordinate()) &&
+               this.vertex.getRemainingPelletCoordinates().equals(node.vertex.getRemainingPelletCoordinates());
         }
 
         @Override
         public int hashCode() {
-            return vertex.hashCode();
+            return stateKey.hashCode();
+        }
+
+        // Helper method for hashCode
+        // Generates a custom state key to be returned
+        private String generateStateKey(PelletVertex vertex) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(vertex.getPacmanCoordinate().getXCoordinate())
+            .append(",")
+            .append(vertex.getPacmanCoordinate().getYCoordinate())
+            .append(":");
+            
+            // Sort pellet coordinates for consistent ordering
+            List<Coordinate> pellets = new ArrayList<>(vertex.getRemainingPelletCoordinates());
+            pellets.sort((a, b) -> {
+                int xCompare = Integer.compare(a.getXCoordinate(), b.getXCoordinate());
+                return xCompare != 0 ? xCompare : Integer.compare(a.getYCoordinate(), b.getYCoordinate());
+            });
+            
+            for (Coordinate pellet : pellets) {
+                sb.append(pellet.getXCoordinate())
+                .append(",")
+                .append(pellet.getYCoordinate())
+                .append(";");
+            }
+            
+            return sb.toString();
         }
 
         @Override
@@ -160,13 +191,15 @@ public class PacmanAgent
     }
 
     // Makes a path to go through the entire maze to eat every single pellet in the quickest way possible.
-    // Uses a greedy first-pellet approach
-    // Will implement A* later.
+    // Implements A* search.
     @Override
     public Path<PelletVertex> findPathToEatAllPelletsTheFastest(final GameView game)
     {
+        //System.out.println("A* search begun");
+
         // Init the vars for the search
         PriorityQueue<Node> open = new PriorityQueue<>();
+        Map<String, Node> bestKnownNodes = new HashMap<>();
         List<Node> closed = new ArrayList<>();
         Node start = new Node(new PelletVertex(game));
 
@@ -181,7 +214,7 @@ public class PacmanAgent
             // Find node within open w/ LOWEST f
             Node current = open.poll();
             if (current == null) {
-                System.out.println("In A* search, no valid node w/ valid f found.");
+                //System.out.println("In A* search, no valid node w/ valid f found.");
                 return null;
             }
 
@@ -220,29 +253,38 @@ public class PacmanAgent
                     String cacheKey = getCacheKey(current.vertex.getPacmanCoordinate(), neighbor.vertex.getPacmanCoordinate());
 
                     cachedDistances.put(cacheKey, distance);
-                    System.out.println("Inputted key " + cacheKey + " w/ distance " + distance);
+                    //System.out.println("Inputted key " + cacheKey + " w/ distance " + distance);
                 } else {
-                    System.out.println("Grabbed distance of " + distance + "from cache");
+                    //System.out.println("Grabbed distance of " + distance + "from cache");
                 }
                 Float tentative_g = current.g + distance;
 
                 // Add neighbor to be eval'd
-                // If @ this point, this path is better
-                if (!open.contains(neighbor)) {
+                // Check if this node alr exists within our heap.
+                Node existingNode = bestKnownNodes.get(neighbor.stateKey);
+                if (existingNode == null) { // neighbor is new, create it
+                    //System.out.println("Making neighbor");
+                    
                     neighbor.parent = current;
                     neighbor.g = tentative_g;
                     neighbor.h = getHeuristic(neighbor.vertex, game);
-                    // neighbor.f implicitly set
-
                     open.add(neighbor);
-                } else if (tentative_g >= neighbor.g) { // This path isn't better
-                    continue;
-                }                
+                    bestKnownNodes.put(neighbor.stateKey, neighbor);
+                } else if (tentative_g < existingNode.g) { // Neighbor exists alr, so update and re-add to priority queue
+                    //System.out.println("Updating neighbor");
+
+                    existingNode.parent = current;
+                    existingNode.g = tentative_g;
+
+                    // Removed & re-added to maintain heap property
+                    open.remove(existingNode);
+                    open.add(existingNode);
+                }
             }
         }
 
         // If we reached this point, no path was found
-        System.out.println("The A* search didn't return a viable path.");
+        //System.out.println("The A* search didn't return a viable path.");
         return null;
     }
 
@@ -268,7 +310,7 @@ public class PacmanAgent
         }
 
         if (path == null) {
-            System.out.println("The path created by the A* search is empty or didn't traverse at all");
+            //System.out.println("The path created by the A* search is empty or didn't traverse at all");
         }    
         return path;
     }
@@ -278,29 +320,21 @@ public class PacmanAgent
     public Set<Coordinate> getOutgoingNeighbors(final Coordinate src, final GameView game) {
         Set<Coordinate> validMoves = new HashSet<Coordinate>();
 
-        // List out all possible actions.
-        Action[] actions = {Action.EAST, Action.WEST, Action.NORTH, Action.SOUTH};
+        int x = src.getXCoordinate();
+        int y = src.getYCoordinate();
 
-        for (Action action : actions) {
-            // If we can move a certain way, add it to the set.
-            if (game.isLegalPacmanMove(src, action)) {
-                int x = src.getXCoordinate();
-                int y = src.getYCoordinate();
-                
-                // Check which direction to add.
-                if (game.isLegalPacmanMove(src, Action.EAST)) {
-                    validMoves.add(new Coordinate(x + 1, y));
-                }
-                if (game.isLegalPacmanMove(src, Action.WEST)) {
-                    validMoves.add(new Coordinate(x - 1, y));
-                }
-                if (game.isLegalPacmanMove(src, Action.NORTH)) {
-                    validMoves.add(new Coordinate(x, y - 1));
-                }
-                if (game.isLegalPacmanMove(src, Action.SOUTH)) {
-                    validMoves.add(new Coordinate(x, y + 1));
-                }
-            }
+        // Check which direction to add.
+        if (game.isLegalPacmanMove(src, Action.EAST)) {
+            validMoves.add(new Coordinate(x + 1, y));
+        }
+        if (game.isLegalPacmanMove(src, Action.WEST)) {
+            validMoves.add(new Coordinate(x - 1, y));
+        }
+        if (game.isLegalPacmanMove(src, Action.NORTH)) {
+            validMoves.add(new Coordinate(x, y - 1));
+        }
+        if (game.isLegalPacmanMove(src, Action.SOUTH)) {
+            validMoves.add(new Coordinate(x, y + 1));
         }
 
         return validMoves;
@@ -402,7 +436,7 @@ public class PacmanAgent
             return path;
 
         } else { // If reached this point, the Dijstrka search failed.
-            System.out.println("Dijstrka search failed.");
+            //System.out.println("Dijstrka search failed.");
             return null;
         }
     }
@@ -431,7 +465,7 @@ public class PacmanAgent
         // We skip 1st item since it is the src (moving src --> src is redundant).
         for (int i = 0; i <= tempPath.size() - 2; i++) {
             Coordinate coord = tempPath.get(i);
-            System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
+            //System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
             newPlan.push(coord);
         }
 
@@ -446,7 +480,7 @@ public class PacmanAgent
         try {
             Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
             Stack<Coordinate> plan = this.getPlanToGetToTarget();
-            
+
             // Plan is empty, run next step in plan
             if (plan != null && !plan.isEmpty()) {
                 Coordinate nextCoord = plan.pop();
@@ -454,14 +488,14 @@ public class PacmanAgent
                 // Verify move is valid
                 if (isValidMove(currentPos, nextCoord, game)) {
                     try {
-                        System.out.println("Moving from " + currentPos + " to " + nextCoord);
+                        //System.out.println("Moving from " + currentPos + " to " + nextCoord);
                         return Action.inferFromCoordinates(currentPos, nextCoord);
                     } catch (Exception e) {
-                        System.out.println("Couldn't infer action: " + e.getMessage());
+                        //System.out.println("Couldn't infer action: " + e.getMessage());
                         return handlePlanFailure(game);
                     }
                 } else {
-                    System.out.println("Plan somehow got invalid");
+                    //System.out.println("Plan somehow got invalid");
                     return handlePlanFailure(game);
                 }
             }
@@ -469,7 +503,7 @@ public class PacmanAgent
             // No plan is set, so we set new plan.
             return getNextMoveFromPelletPath(game);
         } catch (Exception e) { // Some error occured in the search process
-            System.out.println("An error occured durign the makeMove() method: " + e.getMessage());
+            //throw new RuntimeException("The makeMove() method somehow errored out.");
             return Action.values()[this.getRandom().nextInt(Action.values().length)];
         }
     }
@@ -487,8 +521,13 @@ public class PacmanAgent
         // Don't have a path, do the A* search.
         if (currentPelletPath == null) {
             currentPelletPath = findPathToEatAllPelletsTheFastest(game);
+
+            //System.out.println("A* search completed");
+            //System.out.println("Cached distances size is " + cachedDistances.size());
+            //cachedDistances.forEach((k, v) -> System.out.println("Key: "+k+" Value: "+v));
+
             if (currentPelletPath == null) {
-                System.out.println("A* Search failed");
+                //throw new RuntimeException("A* Search failed");
                 return Action.values()[this.getRandom().nextInt(Action.values().length)];
             }
             
@@ -516,13 +555,16 @@ public class PacmanAgent
             // Recursively call makeMove to execute the first step of the new plan
             return this.makeMove(game);
         } else {
-            // Completed the entire path, fallback to rnd movement
+            // Completed the entire path
+            // This implies we've won as we've eaten all accessible pellets, but the game is still ongoing
+            // Thus we throw an exception
             currentPelletPath = null;
             pelletPathIterator = null;
             currentTargetVertex = null;
             this.setPlanToGetToTarget(null);
             this.setTargetCoordinate(null);
             
+            //throw new RuntimeException("The A* search is done and has eaten all possible accessible pellets, but the game isn't over.");
             return Action.values()[this.getRandom().nextInt(Action.values().length)];
         }
     }
@@ -556,5 +598,5 @@ public class PacmanAgent
     }
 
     @Override
-    public void afterGameEnds(final GameView game) { }
+    public void afterGameEnds(final GameView game) {  }
 }
