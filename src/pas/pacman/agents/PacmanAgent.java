@@ -1,18 +1,7 @@
 package src.pas.pacman.agents;
 
 // SYSTEM IMPORTS
-import java.util.Random;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Stack;
-import java.util.Queue;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pacman.agents.Agent;
@@ -37,7 +26,7 @@ public class PacmanAgent
     // Fields
     //
     private final Random random;
-    private Map<Pair<Coordinate, Coordinate>, Float> cachedDistances = new HashMap<>(); // Used to lookup edge weights between states.
+    private Map<String, Float> cachedDistances = new HashMap<>(); // Used to lookup edge weights between states.
     // final Stack<Coordinate> --> Plan (from SearchAgent)
     // final Coordinate --> tgt Coordinate (from SearchAgent)
 
@@ -60,16 +49,13 @@ public class PacmanAgent
     // Methods
     //
 
-    // Gets all valid PelletVertices from a vertex source.
+    // Gets all possible PelletVertices from a vertex source.
     @Override
     public Set<PelletVertex> getOutoingNeighbors(final PelletVertex vertex, final GameView game) {
-        // Use getOutoingNeighbors(final PelletVertex vertex, final GameView game) to get neighboring coords.
         Set<PelletVertex> neighboringVertices = new HashSet<PelletVertex>();
-        Coordinate src = vertex.getPacmanCoordinate();
-        Set<Coordinate> possibleMoves = getOutgoingNeighbors(src, game);
 
-        // Add each coord produced from getOutoingNeighbors(final PelletVertex vertex, final GameView game) to the Set<PelletVertex>
-        for (Coordinate coord : possibleMoves) {
+        // Add each coord from each possible children of vertex (getRemainingPelletCoordinates())
+        for (Coordinate coord : vertex.getRemainingPelletCoordinates()) {
             neighboringVertices.add(vertex.removePellet(coord));
         }
 
@@ -80,12 +66,32 @@ public class PacmanAgent
     // Isn't rly used for now.
     @Override
     public float getEdgeWeight(final PelletVertex src, final PelletVertex dst) {       
-        Coordinate srcCoord = src.getPacmanCoordinate();
-        Coordinate dstCoord = dst.getPacmanCoordinate();        
+        String cacheKey = getCacheKey(src.getPacmanCoordinate(), dst.getPacmanCoordinate());
+    
+        // Check cache first
+        if (cachedDistances.containsKey(cacheKey)) {
+            return cachedDistances.get(cacheKey);
+        } else {
+            // If we reach this point, the cache doesn't contain the key, return MAX_VAL
+            return Float.MAX_VALUE;
+        }
+    }
+
+    // Helper method to for getEdgeWeight
+    // Converts a pair of Coords into a string that can be compared.
+    private String getCacheKey(Coordinate a, Coordinate b) {
+        int x1 = a.getXCoordinate();
+        int y1 = a.getYCoordinate();
+        int x2 = b.getXCoordinate();
+        int y2 = b.getYCoordinate();
         
-        int manhattanDist = Math.abs(srcCoord.getXCoordinate() - dstCoord.getXCoordinate()) 
-                            + Math.abs(srcCoord.getYCoordinate() - dstCoord.getYCoordinate());
-        return manhattanDist;    
+        // Always store with smaller coordinates first
+        // Ensures symmtery so keys don't need to be added twice
+        if (x1 < x2 || (x1 == x2 && y1 < y2)) {
+            return x1 + "," + y1 + ":" + x2 + "," + y2;
+        } else {
+            return x2 + "," + y2 + ":" + x1 + "," + y1;
+        }
     }
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
@@ -98,7 +104,8 @@ public class PacmanAgent
 
     // A helper class for findPathToEatAllPelletsTheFastest
     // Represents a vertex and its given values in the A* search.
-    class Node {
+    // Implement Comparable so that it can be put in a Priority Queue
+    class Node implements Comparable<Node> {
         //
         // Fields
         //
@@ -143,6 +150,11 @@ public class PacmanAgent
         public int hashCode() {
             return vertex.hashCode();
         }
+
+        @Override
+        public int compareTo(Node other) {
+            return Float.compare(this.f(), other.f());
+        }
     }
 
     // Makes a path to go through the entire maze to eat every single pellet in the quickest way possible.
@@ -152,30 +164,23 @@ public class PacmanAgent
     public Path<PelletVertex> findPathToEatAllPelletsTheFastest(final GameView game)
     {
         // Init the vars for the search
-        List<Node> open = new ArrayList<>();
+        PriorityQueue<Node> open = new PriorityQueue<>();
         List<Node> closed = new ArrayList<>();
         Node start = new Node(new PelletVertex(game));
-
-        open.add(start);
 
         start.g = 0f;
         start.h = getHeuristic(start.vertex, game);
         // start.f() is implicilty set
-        // start.parent is alr set
+        // start.parent should be null
 
-        while (!open.isEmpty()) {
-            Node current = null;
-            Float minF = Float.MAX_VALUE;
 
+        open.add(start);
+
+        while (open.size() != 0) {
             // Find node within open w/ LOWEST f
-            for (Node node : open) {
-                if (node.f() < minF) {
-                    minF = node.f();
-                    current = node;
-                }
-            }
+            Node current = open.poll();
             if (current == null) {
-                System.out.println("In A* search, no valid node w/ valid f found.");
+                //System.out.println("In A* search, no valid node w/ valid f found.");
                 return null;
             }
 
@@ -188,7 +193,7 @@ public class PacmanAgent
             }
 
             // Moving current from open --> closed
-            open.remove(current);
+            // open.remove(current);
             closed.add(current);
 
             // Now adding all vertices adj to current.vertex
@@ -205,26 +210,39 @@ public class PacmanAgent
                 }
 
                 // Calc tentative g from current --> neighbor
-                Float distance = graphSearch(current.vertex.getPacmanCoordinate(), neighbor.vertex.getPacmanCoordinate(), game).getTrueCost();
+                // Try to get cached result. If cached result is inconclusive, then we search the graph and cache that result.
+                // Don't need to add 2 keys since the way the key gets extracted ensures symmetry.
+                Float distance = getEdgeWeight(current.vertex, neighbor.vertex);
+                if (distance == Float.MAX_VALUE) {
+                    distance = graphSearch(current.vertex.getPacmanCoordinate(), neighbor.vertex.getPacmanCoordinate(), game).getTrueCost();
+
+                    String cacheKey = getCacheKey(current.vertex.getPacmanCoordinate(), neighbor.vertex.getPacmanCoordinate());
+
+                    cachedDistances.put(cacheKey, distance);
+                    //System.out.println("Inputted key " + cacheKey + " w/ distance " + distance);
+                } else {
+                    //System.out.println("Grabbed distance of " + distance + "from cache");
+                }
                 Float tentative_g = current.g + distance;
 
                 // Add neighbor to be eval'd
+                // If @ this point, this path is better
                 if (!open.contains(neighbor)) {
+                    neighbor.parent = current;
+                    neighbor.g = tentative_g;
+                    neighbor.h = getHeuristic(neighbor.vertex, game);
+                    // neighbor.f implicitly set
+
                     open.add(neighbor);
                 } else if (tentative_g >= neighbor.g) { // This path isn't better
                     continue;
-                }
-
-                // If @ this point, this path is better
-                neighbor.parent = current;
-                neighbor.g = tentative_g;
-                neighbor.h = getHeuristic(neighbor.vertex, game);
-                // neighbor.f implicitly set
+                }                
+                
             }
         }
 
         // If we reached this point, no path was found
-        System.out.println("The A* search didn't return a viable path.");
+        //System.out.println("The A* search didn't return a viable path.");
         return null;
     }
 
@@ -250,7 +268,7 @@ public class PacmanAgent
         }
 
         if (path == null) {
-            System.out.println("The path created by the A* search is empty or didn't traverse at all");
+            //System.out.println("The path created by the A* search is empty or didn't traverse at all");
         }    
         return path;
     }
@@ -346,7 +364,7 @@ public class PacmanAgent
         }
 
         // SHOULDN'T EVER REACH THIS POINT.
-        System.out.println("If reached this point no bfs path found, returning null");
+        //System.out.println("If reached this point no bfs path found, returning null");
         return null;
     }
 
@@ -475,7 +493,7 @@ public class PacmanAgent
                     coordinatePlan.push(segmentCoords.get(j));
                 }
             } else {
-                System.out.println("No path found from " + startCoord + " to " + endCoord);
+                //System.out.println("No path found from " + startCoord + " to " + endCoord);
             }
         }
         
