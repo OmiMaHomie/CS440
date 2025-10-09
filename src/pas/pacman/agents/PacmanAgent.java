@@ -27,6 +27,9 @@ public class PacmanAgent
     //
     private final Random random;
     private Map<String, Float> cachedDistances = new HashMap<>(); // Used to lookup edge weights between states.
+    private Path<PelletVertex> currentPelletPath = null; // Track the overall pellet path
+    private Iterator<PelletVertex> pelletPathIterator = null; // Iterator for incremental processing of the path we created
+    private PelletVertex currentTargetVertex = null; // Current tgt in the pellet path
     // final Stack<Coordinate> --> Plan (from SearchAgent)
     // final Coordinate --> tgt Coordinate (from SearchAgent)
 
@@ -178,7 +181,7 @@ public class PacmanAgent
             // Find node within open w/ LOWEST f
             Node current = open.poll();
             if (current == null) {
-                //System.out.println("In A* search, no valid node w/ valid f found.");
+                System.out.println("In A* search, no valid node w/ valid f found.");
                 return null;
             }
 
@@ -217,9 +220,9 @@ public class PacmanAgent
                     String cacheKey = getCacheKey(current.vertex.getPacmanCoordinate(), neighbor.vertex.getPacmanCoordinate());
 
                     cachedDistances.put(cacheKey, distance);
-                    //System.out.println("Inputted key " + cacheKey + " w/ distance " + distance);
+                    System.out.println("Inputted key " + cacheKey + " w/ distance " + distance);
                 } else {
-                    //System.out.println("Grabbed distance of " + distance + "from cache");
+                    System.out.println("Grabbed distance of " + distance + "from cache");
                 }
                 Float tentative_g = current.g + distance;
 
@@ -239,7 +242,7 @@ public class PacmanAgent
         }
 
         // If we reached this point, no path was found
-        //System.out.println("The A* search didn't return a viable path.");
+        System.out.println("The A* search didn't return a viable path.");
         return null;
     }
 
@@ -265,7 +268,7 @@ public class PacmanAgent
         }
 
         if (path == null) {
-            //System.out.println("The path created by the A* search is empty or didn't traverse at all");
+            System.out.println("The path created by the A* search is empty or didn't traverse at all");
         }    
         return path;
     }
@@ -324,35 +327,40 @@ public class PacmanAgent
     // Does Dijstrak's algorithm search to the tgt coordinate.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src, final Coordinate tgt, final GameView game) {
+        
+        // Setup vars and min heap for search
         PriorityQueue<PathCost> toExplore = new PriorityQueue<>(
             Comparator.comparing(pc -> pc.cost)
         );
         Set<Coordinate> visited = new HashSet<>();
         Map<Coordinate, Coordinate> parents = new HashMap<>();
         Map<Coordinate, Float> costs = new HashMap<>(); // min costs to each coord
+        Boolean isPathfindingDone = false;
 
         toExplore.add(new PathCost(src, 0f));
         costs.put(src, 0f);
         parents.put(src, null);
 
-        Boolean isPathfindingDone = false;
         // goalVertex is tgt
 
         while (!toExplore.isEmpty() && !isPathfindingDone) {
             PathCost currentPC = toExplore.poll();
             Coordinate current = currentPC.coord;
 
+            // Cheaper path exists, skip
             if (visited.contains(current)) {
                 continue;
             }
 
             visited.add(current);
 
+            // Reached goal, break
             if (current.equals(tgt)) {
                 isPathfindingDone = true;
                 break;
             }
 
+            // Visits neighbors, calculating cost & logging cheaper paths
             for (Coordinate neighbor : getOutgoingNeighbors(current, game)) {
                 if (!visited.contains(neighbor)) {
                     // Every edge is 1f for now.
@@ -423,7 +431,7 @@ public class PacmanAgent
         // We skip 1st item since it is the src (moving src --> src is redundant).
         for (int i = 0; i <= tempPath.size() - 2; i++) {
             Coordinate coord = tempPath.get(i);
-            //System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
+            System.out.println("Added " + coord.getXCoordinate() + ", " + coord.getYCoordinate() + " to plan");
             newPlan.push(coord);
         }
 
@@ -435,121 +443,105 @@ public class PacmanAgent
     @Override
     public Action makeMove(final GameView game)
     {
-        Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
-        Stack<Coordinate> plan = this.getPlanToGetToTarget();
-        
-        // No plan exists, run search
-        if (plan == null || plan.isEmpty()) {
-            //System.out.println("No plan found, doing A* search...");
+        try {
+            Coordinate currentPos = game.getEntity(this.getPacmanId()).getCurrentCoordinate();
+            Stack<Coordinate> plan = this.getPlanToGetToTarget();
             
-            Path<PelletVertex> optimalPelletPath = findPathToEatAllPelletsTheFastest(game);
-            
-            if (optimalPelletPath != null) {
-                // Convert the PelletVertex path to a executable Coordinate plan
-                Stack<Coordinate> newPlan = convertPelletPathToCoordinatePlan(optimalPelletPath, game);
+            // Plan is empty, run next step in plan
+            if (plan != null && !plan.isEmpty()) {
+                Coordinate nextCoord = plan.pop();
                 
-                if (newPlan != null && !newPlan.isEmpty()) {
-                    this.setPlanToGetToTarget(newPlan);
-                    plan = this.getPlanToGetToTarget();
-                    //System.out.println("New plan contains " + newPlan.size() + " moves");
+                // Verify move is valid
+                if (isValidMove(currentPos, nextCoord, game)) {
+                    try {
+                        System.out.println("Moving from " + currentPos + " to " + nextCoord);
+                        return Action.inferFromCoordinates(currentPos, nextCoord);
+                    } catch (Exception e) {
+                        System.out.println("Couldn't infer action: " + e.getMessage());
+                        return handlePlanFailure(game);
+                    }
                 } else {
-                    //System.out.println("Couldn't convert Path<PelletVertex> --> Stack<Coordinate>");
-                    return Action.values()[this.getRandom().nextInt(Action.values().length)];
+                    System.out.println("Plan somehow got invalid");
+                    return handlePlanFailure(game);
                 }
-            } else {
-                //System.out.println("A* Search failed");
-                return Action.values()[this.getRandom().nextInt(Action.values().length)];
             }
-        }
-        
-        // Execute the next step in the plan
-        if (plan != null && !plan.isEmpty()) {
-            Coordinate nextCoord = plan.pop();
             
-            // Verify the move is still valid
-            if (isValidMove(currentPos, nextCoord, game)) {
-                try {
-                    //System.out.println("Moving from " + currentPos + " to " + nextCoord);
-                    return Action.inferFromCoordinates(currentPos, nextCoord);
-                } catch (Exception e) {
-                    //System.out.println("Couldn't infer action: " + e.getMessage());
-                    return Action.values()[this.getRandom().nextInt(Action.values().length)];
-                }
-            } else {
-                //System.out.println("Plan somehow got invalid");
-                this.setPlanToGetToTarget(null);
-                return Action.values()[this.getRandom().nextInt(Action.values().length)];
-            }
+            // No plan is set, so we set new plan.
+            return getNextMoveFromPelletPath(game);
+        } catch (Exception e) { // Some error occured in the search process
+            System.out.println("An error occured durign the makeMove() method: " + e.getMessage());
+            return Action.values()[this.getRandom().nextInt(Action.values().length)];
         }
-        
-        // Fallback to rnd move if everything else fails
-        return Action.values()[this.getRandom().nextInt(Action.values().length)];
     }
 
-    // Helper method for makeMove
-    // Convert the path of PelletVertex into a Coordinate Plan
-    private Stack<Coordinate> convertPelletPathToCoordinatePlan(Path<PelletVertex> pelletPath, GameView game) {
-        Stack<Coordinate> coordinatePlan = new Stack<>();
-        
-        if (pelletPath == null) {
-            return coordinatePlan;
-        }
-        
-        // Extract the sequence of pellet vertices in from goal --> init
-        List<PelletVertex> vSeq = new ArrayList<>();
-        Path<PelletVertex> currentPath = pelletPath;
-        
-        while (currentPath != null) {
-            vSeq.add(currentPath.getDestination());
-            currentPath = currentPath.getParentPath();
-        }
-        
-        // For each consecutive pair of vertices, find the path between their pacman pos
-        for (int i = 0; i < vSeq.size() - 1; i++) {
-            PelletVertex currentVertex = vSeq.get(i);
-            PelletVertex nextVertex = vSeq.get(i + 1);
+    // Helper method to handle when the current plan fails
+    private Action handlePlanFailure(GameView game) {
+        this.setPlanToGetToTarget(null);
+        this.setTargetCoordinate(null);
+        this.currentTargetVertex = null;
+        return getNextMoveFromPelletPath(game);
+    }
+
+    // Helper method that serves as the main logic for incremental pellet path following
+    private Action getNextMoveFromPelletPath(GameView game) {
+        // Don't have a path, do the A* search.
+        if (currentPelletPath == null) {
+            currentPelletPath = findPathToEatAllPelletsTheFastest(game);
+            if (currentPelletPath == null) {
+                System.out.println("A* Search failed");
+                return Action.values()[this.getRandom().nextInt(Action.values().length)];
+            }
             
-            Coordinate startCoord = currentVertex.getPacmanCoordinate();
-            Coordinate endCoord = nextVertex.getPacmanCoordinate();
+            // Convert the path to a list and create iterator
+            List<PelletVertex> pelletVertices = convertPelletPathToList(currentPelletPath);
+            pelletPathIterator = pelletVertices.iterator();
             
-            // Get actual path between coords
-            Path<Coordinate> pathSeg = graphSearch(startCoord, endCoord, game);
-            
-            if (pathSeg != null) {
-                // Turn path segment to coord seq
-                List<Coordinate> segmentCoords = extractCoordinatesFromPath(pathSeg);
-                
-                // Add all intermediate coord to the plan (skip the first as it's the current position)
-                for (int j = 1; j < segmentCoords.size(); j++) {
-                    coordinatePlan.push(segmentCoords.get(j));
-                }
-            } else {
-                //System.out.println("No path found from " + startCoord + " to " + endCoord);
+            // Skip the start vertex (current position)
+            if (pelletPathIterator.hasNext()) {
+                pelletPathIterator.next();
             }
         }
         
-        return coordinatePlan;
+        // Get the next tgt vertex from the iterator
+        if (pelletPathIterator != null && pelletPathIterator.hasNext()) {
+            currentTargetVertex = pelletPathIterator.next();
+            
+            // Set the tgt coord to the pacman position of the next vertex
+            Coordinate targetCoord = currentTargetVertex.getPacmanCoordinate();
+            this.setTargetCoordinate(targetCoord);
+            
+            // Call makePlan to compute the path to this target
+            this.makePlan(game);
+            
+            // Recursively call makeMove to execute the first step of the new plan
+            return this.makeMove(game);
+        } else {
+            // Completed the entire path, fallback to rnd movement
+            currentPelletPath = null;
+            pelletPathIterator = null;
+            currentTargetVertex = null;
+            this.setPlanToGetToTarget(null);
+            this.setTargetCoordinate(null);
+            
+            return Action.values()[this.getRandom().nextInt(Action.values().length)];
+        }
     }
 
-    // Helper method for convertPelletPathToCoordinatePlan
-    // Extract coordinates from a Path<Coordinate>
-    private List<Coordinate> extractCoordinatesFromPath(Path<Coordinate> path) {
-        List<Coordinate> coordinates = new ArrayList<>();
-        Path<Coordinate> current = path;
+    // Helper method to convert Path<PelletVertex> --> List<PelletVertex>
+    private List<PelletVertex> convertPelletPathToList(Path<PelletVertex> pelletPath) {
+        List<PelletVertex> vertices = new ArrayList<>();
+        Path<PelletVertex> current = pelletPath;
         
-        // Build list from end to start
+        // Build list from init --> goal state
         while (current != null) {
-            coordinates.add(current.getDestination());
+            vertices.add(current.getDestination());
             current = current.getParentPath();
         }
         
-        // // Reverse to get start to end order
-        // Collections.reverse(coordinates);
-        return coordinates;
+        return vertices;
     }
 
-    // Helper method for makeMove
-    // Just checks if move is valid
+    // Helper method to check if move is valid
     private boolean isValidMove(Coordinate from, Coordinate to, GameView game) {
         if (from == null || to == null || !game.isInBounds(to)) {
             return false;
