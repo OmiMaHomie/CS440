@@ -303,66 +303,100 @@ public class PacmanAgent
         return validMoves;
     }
 
-    // Does a BFS search to the tgt coordinate.
+    // Helper method for graphSearch
+    // Helps store coords & their cul. cost
+    class PathCost {
+        //
+        // FIELDS
+        //
+        public Coordinate coord;
+        public Float cost;
+
+        //
+        // CONSTRUCTOR(S)
+        //
+        public PathCost(Coordinate coord, Float cost) {
+            this.coord = coord;
+            this.cost = cost;
+        }
+    }
+
+    // Does Dijstrak's algorithm search to the tgt coordinate.
     @Override
     public Path<Coordinate> graphSearch(final Coordinate src, final Coordinate tgt, final GameView game) {
-        Queue<Coordinate> bfsQueue = new LinkedList<>(); // queue for bfs queue
-        Set<Coordinate> visited = new HashSet<>(); // contains visited nodes
-        Map<Coordinate, Coordinate> parents = new HashMap<>(); // Will help to backtrace the path to output path in correct order
+        PriorityQueue<PathCost> toExplore = new PriorityQueue<>(
+            Comparator.comparing(pc -> pc.cost)
+        );
+        Set<Coordinate> visited = new HashSet<>();
+        Map<Coordinate, Coordinate> parents = new HashMap<>();
+        Map<Coordinate, Float> costs = new HashMap<>(); // min costs to each coord
 
-        // Init the BFS search
-        bfsQueue.add(src);
-        visited.add(src);
+        toExplore.add(new PathCost(src, 0f));
+        costs.put(src, 0f);
         parents.put(src, null);
 
+        Boolean isPathfindingDone = false;
+        // goalVertex is tgt
 
-        while(!bfsQueue.isEmpty()){
-            // Get latest vertex from the queue.
-            Coordinate currentVertex = bfsQueue.poll();
-            //System.out.println("Current vertex is " + currentVertex);
+        while (!toExplore.isEmpty() && !isPathfindingDone) {
+            PathCost currentPC = toExplore.poll();
+            Coordinate current = currentPC.coord;
 
-            // If we hit tgt, return the path (src --> tgt, it is reversed)
-            if (currentVertex.equals(tgt)) {
-                List<Coordinate> pathCoordinates = new ArrayList<>();
-                Coordinate v = currentVertex;
-                
-                // Collect coords from tgt --> src
-                while (v != null) {
-                    pathCoordinates.add(v);
-                    v = parents.get(v);
-                }
-                
-                // Build Path from src --> tgt
-                Path<Coordinate> path = null;
-                for (int i = pathCoordinates.size() - 1; i >= 0; i--) {
-                    Coordinate coord = pathCoordinates.get(i);
-                    if (path == null) {
-                        path = new Path<>(coord);
-                    } else {
-                        path = new Path<>(coord, 1f, path);
+            if (visited.contains(current)) {
+                continue;
+            }
+
+            visited.add(current);
+
+            if (current.equals(tgt)) {
+                isPathfindingDone = true;
+                break;
+            }
+
+            for (Coordinate neighbor : getOutgoingNeighbors(current, game)) {
+                if (!visited.contains(neighbor)) {
+                    // Every edge is 1f for now.
+                    Float newCost = costs.get(current) + 1f;
+
+                    if (!costs.containsKey(neighbor) || newCost < costs.get(neighbor)) {
+                        costs.put(neighbor, newCost);
+                        parents.put(neighbor, current);
+                        toExplore.add(new PathCost(neighbor, newCost));
                     }
                 }
-                
-                //
-                // IDEAL RETURN PATH
-                //
-                return path;
-            } 
-
-            // Else, go through each potential path and add UNVISITED neighbors to queue.
-            Set<Coordinate> neighbors = getOutgoingNeighbors(currentVertex, game);
-            for (Coordinate currentNeighbor : neighbors) {
-                if (!visited.contains(currentNeighbor)) {
-                    visited.add(currentNeighbor);
-                    bfsQueue.add(currentNeighbor);
-                    parents.put(currentNeighbor, currentVertex);
-                }
-            }           
+            }
         }
 
-        // SHOULDN'T EVER REACH THIS POINT.
-        //System.out.println("If reached this point no bfs path found, returning null");
-        return null;
+        if (isPathfindingDone) {
+            List<Coordinate> pathCoordinates = new ArrayList<>();
+            Coordinate v = tgt;
+
+            // Collect coords from tgt --> src
+            while (v != null) {
+                pathCoordinates.add(v);
+                v = parents.get(v);
+            }
+
+            // Build path from src --> tgt
+            Path<Coordinate> path = null;
+            for (int i = pathCoordinates.size() - 1; i >= 0; i--) {
+                Coordinate coord = pathCoordinates.get(i);
+                if (path == null) {
+                    path = new Path<>(coord);
+                } else {
+                    path = new Path<>(coord, 1f, path);
+                }
+            }
+
+            //
+            // IDEAL RETURN PATH
+            //
+            return path;
+
+        } else { // If reached this point, the Dijstrka search failed.
+            System.out.println("Dijstrka search failed.");
+            return null;
+        }
     }
 
     // Calculate's the plan the agent needs to do from their own coordinate to the tgt coordinate.
