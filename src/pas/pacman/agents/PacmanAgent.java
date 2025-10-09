@@ -63,7 +63,7 @@ public class PacmanAgent
     }
 
     // Calculates the cost of moving from src --> dst vertices
-    // Isn't rly used for now.
+    // Will attempt to query cache for distance. If it doesn't exist, ret MAX_VAL to search for distance (should be querable later).
     @Override
     public float getEdgeWeight(final PelletVertex src, final PelletVertex dst) {       
         String cacheKey = getCacheKey(src.getPacmanCoordinate(), dst.getPacmanCoordinate());
@@ -96,7 +96,6 @@ public class PacmanAgent
 
     // So basically this method tries to calculate the BEST CASE cost of traversing the maze such that all pellets are eaten
     // For now we simply return the # of pellets (the best-case senario, as # of pellets could be = # of moves needed)
-    // Also rly isn't being used for now.
     @Override
     public float getHeuristic(final PelletVertex src, final GameView game) {
         return src.getRemainingPelletCoordinates().size();
@@ -173,7 +172,6 @@ public class PacmanAgent
         // start.f() is implicilty set
         // start.parent should be null
 
-
         open.add(start);
 
         while (open.size() != 0) {
@@ -237,7 +235,6 @@ public class PacmanAgent
                 } else if (tentative_g >= neighbor.g) { // This path isn't better
                     continue;
                 }                
-                
             }
         }
 
@@ -409,7 +406,7 @@ public class PacmanAgent
         
         // No plan exists, run search
         if (plan == null || plan.isEmpty()) {
-            System.out.println("No plan found, doing A* search...");
+            //System.out.println("No plan found, doing A* search...");
             
             Path<PelletVertex> optimalPelletPath = findPathToEatAllPelletsTheFastest(game);
             
@@ -420,13 +417,13 @@ public class PacmanAgent
                 if (newPlan != null && !newPlan.isEmpty()) {
                     this.setPlanToGetToTarget(newPlan);
                     plan = this.getPlanToGetToTarget();
-                    System.out.println("New plan contains " + newPlan.size() + " moves");
+                    //System.out.println("New plan contains " + newPlan.size() + " moves");
                 } else {
-                    System.out.println("Couldn't convert Path<PelletVertex> --> Stack<Coordinate>");
+                    //System.out.println("Couldn't convert Path<PelletVertex> --> Stack<Coordinate>");
                     return Action.values()[this.getRandom().nextInt(Action.values().length)];
                 }
             } else {
-                System.out.println("A* Search failed");
+                //System.out.println("A* Search failed");
                 return Action.values()[this.getRandom().nextInt(Action.values().length)];
             }
         }
@@ -438,14 +435,14 @@ public class PacmanAgent
             // Verify the move is still valid
             if (isValidMove(currentPos, nextCoord, game)) {
                 try {
-                    System.out.println("Moving from " + currentPos + " to " + nextCoord);
+                    //System.out.println("Moving from " + currentPos + " to " + nextCoord);
                     return Action.inferFromCoordinates(currentPos, nextCoord);
                 } catch (Exception e) {
-                    System.out.println("Couldn't infer action: " + e.getMessage());
+                    //System.out.println("Couldn't infer action: " + e.getMessage());
                     return Action.values()[this.getRandom().nextInt(Action.values().length)];
                 }
             } else {
-                System.out.println("Plan somehow got invalid");
+                //System.out.println("Plan somehow got invalid");
                 this.setPlanToGetToTarget(null);
                 return Action.values()[this.getRandom().nextInt(Action.values().length)];
             }
