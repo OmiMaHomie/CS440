@@ -4,7 +4,6 @@ package src.pas.pacman.agents;
 import java.util.*;
 
 // JAVA PROJECT IMPORTS
-import edu.bu.pas.pacman.agents.Agent;
 import edu.bu.pas.pacman.agents.SearchAgent;
 import edu.bu.pas.pacman.interfaces.ThriftyPelletEater;
 import edu.bu.pas.pacman.game.Action;
@@ -13,7 +12,9 @@ import edu.bu.pas.pacman.graph.Path;
 import edu.bu.pas.pacman.graph.PelletGraph.PelletVertex;
 import edu.bu.pas.pacman.utils.Coordinate;
 import edu.bu.pas.pacman.utils.Pair;
+import edu.bu.pas.pacman.game.Game;
 import edu.bu.pas.pacman.game.DefaultBoard;
+import edu.bu.pas.pacman.game.DefaultBoard.Cell;
 import edu.bu.pas.pacman.game.entity.Entity;
 
 
@@ -397,7 +398,7 @@ public class PacmanAgent
             // Visits neighbors, calculating cost & logging cheaper paths
             for (Coordinate neighbor : getOutgoingNeighbors(current, game)) {
                 if (!visited.contains(neighbor)) {
-                    // Every edge is 1f for now.
+                    // Manage weight depending on if there's a ghost there.
                     Float newCost = costs.get(current) + 1f;
 
                     if (!costs.containsKey(neighbor) || newCost < costs.get(neighbor)) {
