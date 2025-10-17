@@ -600,5 +600,85 @@
 
     \newpage
 
-    \noindent This thus proves that any n-ary constraint can be converted into a set of binary constraints via the proof above. Since all CSPs can be converted into a set of binary CSPs, it is only necessary to make an algo for binary CSPs. \\
+    \noindent This thus proves that any n-ary constraint can be converted into a set of binary constraints via the proof above. Since all CSPs can be converted into a set of binary CSPs, it is only necessary to make an algo for binary CSPs.
+
+
+    \newpage
+
+
+    \question{Extra Credit: Creating Crossword Puzzles (25 points)}
+    Consider the problem of building a crossword puzzle (\textbf{creating} the crossword puzzle, \textbf{not} solving it). A crossword puzzle is defined as fitting words into a rectangular grid. The grid itself is given as part of the problem and specifies which squares are blank (and may be filled), and which are shaded (and therefore unavailable). You have at your disposal a list of words (i.e. a dictionary), and the task is to fill in the blank squares by using any subset of the list. Formulate this problem as:
+
+    \begin{enumerate}[label=\alph*]
+        \item A general search problem. Choose an appropriate search algorithm and specify a heuristic function. Is it better to fill in blanks one letter at a time or one word at a time?
+        \item A CSP. Should the variables be words or letters?
+        \item Which formulation is better? Why?\\ \\
+    \end{enumerate}
+
+    \noindent \textbf{A: } General search problem \\
+    \\
+    The first thing we'd need to figure out is the state representation. We can have it as the following \\
+    - The partially filled crossword, with some letters filled and other blank. \\
+    - The set of words remining in the dictionary. \\
+    \\
+    The inital state is the empty crossword (all squares are empty), with a full dictionary. \\
+    \\
+    The goal state is a crossword such that: \\
+    - Every square is filled.\\
+    - Every sequence of consecutive horiztonal and vertical blank squares makes a word in the dictionary. \\
+    - No word is used from the dictionary more than once (from my memory, crossword don't typically reuse words). \\
+    \\
+    \\
+    The for heuristic function, it could look something like this: \\
+    $h(s) = \text{the number of unfilled word slots} + (\text{the number of conflicting intersections} \times 2)$ \\
+    \\
+    The heuristic could simply just be the number of remaining blank squares, but that'd be weak. This improvement is now taking into account both the remaining number of unsolved words left, and the number of intersections that we've solved, putting a greater emphasis on solving these intersection (in my experience, the best way I solve words I don't know in crosswords is to try to solve other words intersecting that row. One may not know the word "orange" but if you're given "~r~~ge", you'd have a better idea of what the word could be). \\
+    \\
+    \\
+    For the search algo itself, we would implement a backtracking search while checking the heuristic for word selection (something like AC-3 with heuristics).\\
+    
+    \newpage
+
+    \noindent Deciding between working with words or letters at a time, \textbf{words will be better in the case since:}\\
+    - This makes it such that the dictionary constraint is already satisfied at each step.\\
+    - Lowers branching factor compared to letter-by-letter checking.\\
+    - We can verify if an action is making meaningful process to the goal.\\
+    - Letter-by-letter checking would require also CONSTANTLY checking if partial words exist in the dictionary (not evne getting to also checking if that word is valid).\\
+    \\
+    \\
+    \textbf{B: } CSP\\
+    \\
+    \textbf{Vars: } Each word slot in the crossword (horizontal and vertical). \\
+    \textbf{Domains: } For each var, domain will be the set of words from the dictionary that fits that sequence (for example, perhaps "pear" and "bear").\\
+    \textbf{Constraints: }\\
+    - The first constraint would be that no 2-word-var can have the same word value (like again crosswords don't reuse words). \\
+    - The second constraint would be that, for every intersection between a horizontal word $H$ at position $i$ and vertical word $V$ at position $j$, the letter at $H[i]$ must be equal to the letter at $V[j]$.\\
+    \indent - $H[i], V[j] = \text{letters}, H[i] == V[j]$.\\
+    \\
+    \\
+    In a CSP, words would again be a better variable than letter because: \\
+    - The dictionary constraint would be implicilty encoded in the domains. \\
+    - Intersection constraints would naturally be binary constraints between word vars. \\
+    - Letter-by-letter formulation would require complex global contraints to make sure that each sequence is forming a valid dictionary word. \\
+    \\
+    \\
+    \textbf{C: CSP would be better than a General Search Problem} \\
+    \\
+    The first reason is due to the question's way of representating states. The problem has variables (words slot), domains (possible words within those slots), and clear constraints (intersection must match and words have to be unique). \\
+    \\
+    The next reason is due to CSP's constraint logic. It can efficently: \\
+    - Use arc consistency to prune domains where intersections conflict. \\
+    - Apply forward checking when assigning words. \\
+    - And use the heuristic to select the most constrained slots first. \\
+    \\
+    In the search formulation, some word selections might lead to unsolvable intersection conflicts later. CSP constraint propagation checks these earlier, so these failures are avoided. \\
+    \\
+    Also, crosswords naturally have a constraint graph where word slots are nodes and intersections are edges, which is pretty similar to the CSP representation. \\
+    \\
+    Lastly, while both algorithms are exponential in their worst case, CSP will practically be much faster, as the var/val ordering and constraint propagation will usually perform better in this senario of such a concretely constrained hypothetical. \\
+    \\
+    Essentially, think about what the constraints that need to be checked while solving a crossword puzzle: word uniqueness and intersection viability. CSPs are made to handle and check these constraints while solving the problem too.
+
+
+
 \end{document}
