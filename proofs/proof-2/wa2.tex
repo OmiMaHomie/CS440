@@ -137,7 +137,7 @@ $$v' = \texttt{Alpha-Beta-Pruning}(s, \alpha, \beta)$$
 
 \noindent This means that if the true minimax value is between $\alpha$ and $\beta$, then Alpha-Beta pruning returns the correct value. However, if the tru minimax value if outside of this range, then Alpha-Beta pruning may return a different value. However, the incorrect value that Alpha-Beta pruning returns is bounded in the same manner that the true minimax value is (i.e. if the true minimax value is $\le \alpha$ then the value produced by Alpha-Beta pruning is also $\le \alpha$ and vice versa). Note that this implies that Alpha-Beta pruning will be correct with initial values of $(-\infty, +\infty)$ for $(\alpha, \beta)$.\newline\newline
 
-\noindent Hint: use induction. If $s$ is not a terminal state, then you can correctly assume that the claim above holds for all children of $s$. Use this assumption to prove that it also holds for $s$ (the base case is trivial: minimax and Alpha-Beta pruning produce the same value for terminal states)\newline
+
 
 \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples on piazza for guidance).\newpage
 
