@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
+import edu.bu.labs.rttt.game.Constants.Rendering.Player;
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.othello.agents.Agent;
 import edu.bu.pas.othello.agents.TimedTreeSearchAgent;
@@ -33,8 +33,34 @@ public class OthelloAgent
         @Override
         public double getTerminalUtility()
         {
-            // TODO: complete me!
-            return 0d;
+            double cValue = 100.00d; //defining c value symmetric
+            int whiteCellCount = 0;
+            int blackCellCount = 0;
+            PlayerType[][] cells = getGameView().getCells();
+            for (int i = 0; i < cells.length; i++) {
+                for (int j = 0; j < cells[i].length; j++) {
+                    PlayerType cell = cells[i][j];
+                    if (cell == PlayerType.BLACK) {
+                        blackCellCount++;
+                    } else if (cell == PlayerType.WHITE) {
+                        whiteCellCount++;
+                    }
+                }
+            }
+            //now to determine whether we are white or black
+            int multiplier = 1; //1 for white if black becomes -1
+            if (getGameView().getCurrentPlayerType().equals(PlayerType.BLACK)) {
+                multiplier *= - 1;
+            }
+            if (whiteCellCount > blackCellCount) {
+                    return cValue * multiplier;
+                }   
+                else if (blackCellCount > whiteCellCount) {
+                    return cValue * multiplier;
+                }   
+                else {
+                    return 0d;
+                }
         }
 
         @Override
@@ -88,6 +114,7 @@ public class OthelloAgent
 
         // return the move inside that node
         return moveNode.getLastMove();
+
     }
 
     @Override
