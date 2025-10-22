@@ -5,12 +5,14 @@ package src.pas.othello.agents;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import edu.bu.labs.rttt.game.Constants.Rendering.Player;
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.othello.agents.Agent;
 import edu.bu.pas.othello.agents.TimedTreeSearchAgent;
 import edu.bu.pas.othello.game.Game.GameView;
+import edu.bu.pas.othello.game.Game;
 import edu.bu.pas.othello.game.PlayerType;
 import edu.bu.pas.othello.traversal.Node;
 import edu.bu.pas.othello.utils.Coordinate;
@@ -29,10 +31,10 @@ public class OthelloAgent
         {
             super(maxPlayerType, gameView, depth);
         }
-
         @Override
         public double getTerminalUtility()
         {
+            System.out.println("--run get terminal utility---");
             double cValue = 100.00d; //defining c value symmetric
             int whiteCellCount = 0;
             int blackCellCount = 0;
@@ -66,8 +68,29 @@ public class OthelloAgent
         @Override
         public List<Node> getChildren()
         {
-            // TODO: complete me!
-            return null;
+            //if no nodes available to play (game over terminal) return empty list
+            List<Node> children = new ArrayList<>();
+            if (getGameView().isGameOver()) {
+                return children;
+            }
+            //use frontier to get the available legal moves
+            Set<Coordinate> legalMoves = getGameView().getFrontier(getCurrentPlayerType()); //getting frontier for my current player
+            if (!legalMoves.isEmpty()) { //case that we have legal moves to make
+                for (Coordinate move : legalMoves) {
+                    Game newGame = new Game(getGameView()); //creating new game object for this new move
+                    newGame.applyMove(move); //applied the move in the new game
+                    OthelloNode child = new OthelloNode(getCurrentPlayerType(), newGame.getView(), getDepth() + 1);
+                    child.setLastMove(move); //adding last move
+                    children.add(child);
+                }
+            }
+            else { //legal moves empty no moves
+                Game newGame = new Game(getGameView());
+                newGame.playTurn(); //it seems like playTurn would be skipping turn based off the name of the method
+                OthelloNode child = new OthelloNode(getCurrentPlayerType(), newGame.getView(), getDepth() + 1);
+                children.add(child);
+            }
+            return children;
         }
     }
 
@@ -89,6 +112,12 @@ public class OthelloAgent
         // if you change OthelloNode's constructor, you will want to change this!
         // Note: I am starting the initial depth at 0 (because I like to count up)
         //       change this if you want to count depth differently
+
+        //testing terminal utility works
+        OthelloNode n = new OthelloNode(getMyPlayerType(), game, 0);
+        System.out.println(n.getTerminalUtility());
+
+
         return new OthelloNode(this.getMyPlayerType(), game, 0);
     }
 
@@ -113,7 +142,8 @@ public class OthelloAgent
         Node moveNode = this.treeSearch(node);
 
         // return the move inside that node
-        return moveNode.getLastMove();
+        //return moveNode.getLastMove();
+        return null;
 
     }
 
