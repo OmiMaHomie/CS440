@@ -93,7 +93,6 @@ public class OthelloAgent
             return children;
         }
     }
-
     private final Random random;
 
     public OthelloAgent(final PlayerType myPlayerType,
@@ -125,9 +124,68 @@ public class OthelloAgent
     public Node treeSearch(Node n)
     {
         // TODO: complete me!
-        return null;
+        //Implementing Alpha-Beta Pruning using the minimax helper method
+        boolean maxPlayer = (n.getCurrentPlayerType() == n.getMaxPlayerType());
+        double MIN = Integer.MIN_VALUE;
+        double MAX = Integer.MAX_VALUE;
+        int maxSearchDepth = 6; //set to 6 as max depth, higher search more time can edit this change with heuristic
+        n = alphaBetaPruning(n, maxSearchDepth, MIN, MAX, maxPlayer); //defined a set max search depth when running
+        return n;
     }
 
+    
+    public Node alphaBetaPruning(Node node, int depth, double alpha, double beta, boolean maximizingPlayer) {
+    // Terminal case
+    if (depth == 0 || node.isTerminal()) {
+        return node;
+    }
+    Node bestNode = null;
+    if (maximizingPlayer) {
+        double maxValue = Double.NEGATIVE_INFINITY;
+        for (Node child : node.getChildren()) {
+            Node n = alphaBetaPruning(child, depth - 1, alpha, beta, false); //recursive call subtracting depth
+            double value = n.getUtilityValue();
+
+            if (value > maxValue) {
+                maxValue = value;
+                bestNode = child;
+            }
+
+            alpha = Math.max(alpha, value);
+            if (beta <= alpha) { //pruning
+                break;
+            } 
+        }
+        if (bestNode != null) {
+            return bestNode;
+        }
+        else {
+            return node;
+        }
+    } else {
+        double minValue = Double.POSITIVE_INFINITY;
+        for (Node child : node.getChildren()) {
+            Node n = alphaBetaPruning(child, depth - 1, alpha, beta, true); 
+            double value = n.getUtilityValue();
+
+            if (value < minValue) {
+                minValue = value;
+                bestNode = child;
+            }
+
+            beta = Math.min(beta, value);
+            if (beta <= alpha) { //pruning
+                break;
+            } 
+        }
+        if (bestNode != null) {
+            return bestNode;
+        }
+        else {
+            return node;
+        }
+        }
+    }
     @Override
     public Coordinate chooseCoordinateToPlaceTile(final GameView game)
     {
@@ -142,9 +200,7 @@ public class OthelloAgent
         Node moveNode = this.treeSearch(node);
 
         // return the move inside that node
-        //return moveNode.getLastMove();
-        return null;
-
+        return moveNode.getLastMove();
     }
 
     @Override
