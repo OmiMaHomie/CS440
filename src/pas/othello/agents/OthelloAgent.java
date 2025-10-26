@@ -16,6 +16,8 @@ import edu.bu.pas.othello.game.Game;
 import edu.bu.pas.othello.game.PlayerType;
 import edu.bu.pas.othello.traversal.Node;
 import edu.bu.pas.othello.utils.Coordinate;
+import src.pas.othello.ordering.MoveOrderer;
+import src.pas.othello.heuristics.Heuristics;
 
 
 public class OthelloAgent
@@ -126,10 +128,10 @@ public class OthelloAgent
         // TODO: complete me!
         //Implementing Alpha-Beta Pruning using the minimax helper method
         boolean maxPlayer = (n.getCurrentPlayerType() == n.getMaxPlayerType());
-        double MIN = Integer.MIN_VALUE;
-        double MAX = Integer.MAX_VALUE;
+        double alpha = Double.NEGATIVE_INFINITY;
+        double beta = Double.POSITIVE_INFINITY;
         int maxSearchDepth = 6; //set to 6 as max depth, higher search more time can edit this change with heuristic
-        n = alphaBetaPruning(n, maxSearchDepth, MIN, MAX, maxPlayer); //defined a set max search depth when running
+        n = alphaBetaPruning(n, maxSearchDepth, alpha, beta, maxPlayer); //defined a set max search depth when running
         return n;
     }
 
@@ -137,12 +139,18 @@ public class OthelloAgent
     public Node alphaBetaPruning(Node node, int depth, double alpha, double beta, boolean maximizingPlayer) {
     // Terminal case
     if (depth == 0 || node.isTerminal()) {
+        if (node.isTerminal()) {
+            node.setUtilityValue(node.getTerminalUtility());
+        }
+        else {
+            node.setUtilityValue(Heuristics.calculateHeuristicValue(node));
+        }
         return node;
     }
     Node bestNode = null;
     if (maximizingPlayer) {
         double maxValue = Double.NEGATIVE_INFINITY;
-        for (Node child : node.getChildren()) {
+        for (Node child : MoveOrderer.orderChildren(node.getChildren())) {
             Node n = alphaBetaPruning(child, depth - 1, alpha, beta, false); //recursive call subtracting depth
             double value = n.getUtilityValue();
 
@@ -164,7 +172,7 @@ public class OthelloAgent
         }
     } else {
         double minValue = Double.POSITIVE_INFINITY;
-        for (Node child : node.getChildren()) {
+        for (Node child : MoveOrderer.orderChildren(node.getChildren())) {
             Node n = alphaBetaPruning(child, depth - 1, alpha, beta, true); 
             double value = n.getUtilityValue();
 

@@ -24,19 +24,24 @@ public class Heuristics
     public static double calculateHeuristicValue(Node node)
     {
         // TODO: complete me!
-        //this heuristic approach uses the wouldSandwichOppositePlayerInDirection which estimates the strength of a move with its flips
+        //overall deciding to combine multiple different values to make one heuristic.
         PlayerType mytype = node.getCurrentPlayerType();
+        PlayerType opponentType = node.getOtherPlayerType();
         Game newGame = new Game(node.getGameView());
+        int numRows = newGame.getBoard().getNumRows();
+        int numCols = newGame.getBoard().getNumCols();
+        //flips
+        //this  uses the wouldSandwichOppositePlayerInDirection which estimates the strength of a move with its flips
+
         int flips = 0;
         Set<Coordinate> legalMoves = newGame.getView().getFrontier(node.getCurrentPlayerType()); 
         for (Coordinate move : legalMoves) { //iterating through frontier of legal moves of the game state
-            int flipsForMove = 0;
+
             for (Direction d : Direction.values()) { //each direction of potential flips
                 if (newGame.getBoard().wouldSandwichOppositePlayerInDirection(mytype, move, d)) {
-                    flipsForMove++;
+                    flips++;
                 }
             }
-        flips += flipsForMove;
         }
         return flips;
     }
