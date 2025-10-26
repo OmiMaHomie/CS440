@@ -65,7 +65,28 @@ public class Heuristics
         int opponentNumMoves = newGame.getView().getFrontier(opponentType).size(); 
         int frontierDifference = myNumMoves - opponentNumMoves;
 
-        int overallHueristicScore = frontierDifference * 3 + flips * 2 + pieceDifference;
+
+        //controlling walls is important
+        int myWallSpaces = 0;
+        int opponentWallSpaces = 0;
+        for (int i = 0; i < numCols; i++) { //checking cols
+            if (board[i][numCols - 1] == mytype) {
+                myWallSpaces += 1;
+            } 
+            if (board[i][numCols - 1] == opponentType) {
+                myWallSpaces += 1;
+            } 
+        }
+        for (int i = 0; i < numRows; i++) { //checking rows
+            if (board[numRows - 1][i] == mytype) {
+                myWallSpaces += 1;
+            } 
+            if (board[numRows - 1][i] == opponentType) {
+                myWallSpaces += 1;
+            } 
+        }
+        int wallDifference = myWallSpaces - opponentWallSpaces;
+        int overallHueristicScore = wallDifference * 5 + frontierDifference * 3 + flips * 2 + pieceDifference;
         return overallHueristicScore;
     }
 }
