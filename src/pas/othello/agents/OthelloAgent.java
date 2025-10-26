@@ -36,7 +36,6 @@ public class OthelloAgent
         @Override
         public double getTerminalUtility()
         {
-            System.out.println("--run get terminal utility---");
             double cValue = 100.00d; //defining c value symmetric
             int whiteCellCount = 0;
             int blackCellCount = 0;
@@ -116,9 +115,6 @@ public class OthelloAgent
 
         //testing terminal utility works
         OthelloNode n = new OthelloNode(getMyPlayerType(), game, 0);
-        System.out.println(n.getTerminalUtility());
-
-
         return new OthelloNode(this.getMyPlayerType(), game, 0);
     }
 
@@ -130,7 +126,7 @@ public class OthelloAgent
         boolean maxPlayer = (n.getCurrentPlayerType() == n.getMaxPlayerType());
         double alpha = Double.NEGATIVE_INFINITY;
         double beta = Double.POSITIVE_INFINITY;
-        int maxSearchDepth = 6; //set to 6 as max depth, higher search more time can edit this change with heuristic
+        int maxSearchDepth = 4; //set to 6 as max depth, higher search more time can edit this change with heuristic
         n = alphaBetaPruning(n, maxSearchDepth, alpha, beta, maxPlayer); //defined a set max search depth when running
         return n;
     }
@@ -140,10 +136,10 @@ public class OthelloAgent
     // Terminal case
     if (depth == 0 || node.isTerminal()) {
         if (node.isTerminal()) {
-            node.setUtilityValue(node.getTerminalUtility());
+            node.setUtilityValue(node.getTerminalUtility()); //for terminal run the method to get utility
         }
         else {
-            node.setUtilityValue(Heuristics.calculateHeuristicValue(node));
+            node.setUtilityValue(Heuristics.calculateHeuristicValue(node)); //setting hueristic val
         }
         return node;
     }
@@ -164,6 +160,7 @@ public class OthelloAgent
                 break;
             } 
         }
+        node.setUtilityValue(maxValue); //setting the utility value of the node to the max val
         if (bestNode != null) {
             return bestNode;
         }
@@ -186,6 +183,7 @@ public class OthelloAgent
                 break;
             } 
         }
+        node.setUtilityValue(minValue); 
         if (bestNode != null) {
             return bestNode;
         }
