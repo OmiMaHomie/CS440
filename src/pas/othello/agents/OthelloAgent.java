@@ -36,7 +36,7 @@ public class OthelloAgent
         @Override
         public double getTerminalUtility()
         {
-            double cValue = 100.00d; //defining c value symmetric
+            double cValue = 100.00; //defining c value symmetric
             int whiteCellCount = 0;
             int blackCellCount = 0;
             PlayerType[][] cells = getGameView().getCells();

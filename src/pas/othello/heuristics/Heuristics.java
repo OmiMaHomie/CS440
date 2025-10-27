@@ -28,8 +28,6 @@ public class Heuristics
         PlayerType mytype = node.getCurrentPlayerType();
         PlayerType opponentType = node.getOtherPlayerType();
         Game newGame = new Game(node.getGameView());
-        int numRows = newGame. getBoard().getNumRows();
-        int numCols = newGame.getBoard().getNumCols();
         PlayerType[][] board = newGame.getView().getCells();
         //flips
         //this  uses the wouldSandwichOppositePlayerInDirection which estimates the strength of a move with its flips
@@ -47,8 +45,8 @@ public class Heuristics
         //num pieces on the board of me vs opponent
         int myPieceCount = 0;
         int opponentPieceCount = 0;
-        for (int i = 0; i < numRows; i++) {
-            for (int j = 0; j < numCols; j++) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
                 if (board[i][j] == mytype) {
                     myPieceCount += 1;
                 } 
@@ -66,27 +64,82 @@ public class Heuristics
         int frontierDifference = myNumMoves - opponentNumMoves;
 
 
-        //controlling walls is important
-        int myWallSpaces = 0;
-        int opponentWallSpaces = 0;
-        for (int i = 0; i < numCols; i++) { //checking cols
-            if (board[i][numCols - 1] == mytype) {
-                myWallSpaces += 1;
-            } 
-            if (board[i][numCols - 1] == opponentType) {
-                myWallSpaces += 1;
-            } 
+        //graph that has weights for tiles being there
+        //corners strongest, middle sort of strong, adjacent corners weak
+        int[][] weightedGraph = {
+            {100, -30,  10,   5,   5,  10, -30, 100},
+            {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
+            { 10,  -5,  15,   3,   3,  15,  -5,  10},
+            {  5,  -5,   3,   3,   3,   3,  -5,   5},
+            {  5,  -5,   3,   3,   3,   3,  -5,   5},
+            { 10,  -5,  15,   3,   3,  15,  -5,  10},
+            {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
+            {100, -30,  10,   5,   5,  10, -30, 100}
+        };
+        int positionValue = 0;
+        for (int i = 0; i < weightedGraph.length; i++) {
+            for (int j = 0; j < weightedGraph[i].length; j++) {
+                if (board[i][j] == mytype) {
+                    positionValue += weightedGraph[i][j]; //adding i have control
+                }
+                if (board[i][j] == opponentType) {
+                    positionValue -= weightedGraph[i][j]; //subtraction because opponent controls
+                }
+            }
+        }   
+
+        //corners
+        PlayerType[] cornerStates = {board[0][0], board[0][7], board[7][7], board[7][0]};
+        int myCorners = 0;
+        int opponentCorners = 0;
+        for (int i = 0; i < cornerStates.length; i++) {
+            if (cornerStates[i] == mytype) {
+                myCorners += 1;
+            }
+            if (cornerStates[i] == opponentType) {
+                opponentCorners += 1;
+            }
         }
-        for (int i = 0; i < numRows; i++) { //checking rows
-            if (board[numRows - 1][i] == mytype) {
-                myWallSpaces += 1;
-            } 
-            if (board[numRows - 1][i] == opponentType) {
-                myWallSpaces += 1;
-            } 
+        int cornerDifference = myCorners - opponentCorners;
+
+        //calculating stability pieces that cannot be flipped
+
+        //changing heuristic value depending on how far into the game
+        //total 64 squares
+        int overallHueristicScore = 0;
+        int totalPieceCount = myPieceCount + opponentPieceCount;
+        //early game
+        if (totalPieceCount < 20) {
+            overallHueristicScore = 
+            frontierDifference * 6 + 
+            flips * 1 + 
+            pieceDifference * -4 + 
+            cornerDifference * 4 + 
+            positionValue * 5;
+            //want to be able to make many moves
+            //want to have fewer pieces
         }
-        int wallDifference = myWallSpaces - opponentWallSpaces;
-        int overallHueristicScore = wallDifference * 5 + frontierDifference * 3 + flips * 2 + pieceDifference;
+        //middle game
+        if (totalPieceCount >= 20 && totalPieceCount <= 50) {
+            overallHueristicScore = 
+            frontierDifference * 4 + 
+            flips * 1 + 
+            pieceDifference * 2 +
+            cornerDifference * 4 + 
+            positionValue * 5;
+            //want to control the walls (not the x off corner)
+            //control the corners very strong
+        }
+        //end game
+        if (totalPieceCount > 50) {
+            overallHueristicScore = 
+            frontierDifference * 2 + 
+            flips * 1 +
+            pieceDifference * 8 + 
+            cornerDifference * 4 + 
+            positionValue * 5;
+            //end game want to have a higher piece count
+        }
         return overallHueristicScore;
     }
 }
