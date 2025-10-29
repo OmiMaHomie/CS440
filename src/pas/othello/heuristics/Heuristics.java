@@ -115,7 +115,7 @@ public class Heuristics
             flips * 1 + 
             pieceDifference * -4 + 
             cornerDifference * 4 + 
-            positionValue * 5;
+            positionValue;
             //want to be able to make many moves
             //want to have fewer pieces
         }
@@ -123,10 +123,10 @@ public class Heuristics
         if (totalPieceCount >= 20 && totalPieceCount <= 50) {
             overallHueristicScore = 
             frontierDifference * 4 + 
-            flips * 1 + 
+            flips * 2 + 
             pieceDifference * 2 +
             cornerDifference * 4 + 
-            positionValue * 5;
+            positionValue;
             //want to control the walls (not the x off corner)
             //control the corners very strong
         }
@@ -134,10 +134,10 @@ public class Heuristics
         if (totalPieceCount > 50) {
             overallHueristicScore = 
             frontierDifference * 2 + 
-            flips * 1 +
+            flips * 5 +
             pieceDifference * 8 + 
             cornerDifference * 4 + 
-            positionValue * 5;
+            positionValue;
             //end game want to have a higher piece count
         }
         return overallHueristicScore;
