@@ -10,7 +10,7 @@ import edu.bu.pas.othello.game.Game;
 import edu.bu.pas.othello.game.PlayerType;
 // SYSTEM IMPORTS
 import edu.bu.pas.othello.traversal.Node;
-import edu.bu.pas.pacman.game.Game.GameView;
+import edu.bu.pas.othello.game.Game.GameView;
 
 
 // JAVA PROJECT IMPORTS

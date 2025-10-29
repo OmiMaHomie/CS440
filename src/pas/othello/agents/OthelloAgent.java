@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
-import edu.bu.labs.rttt.game.Constants.Rendering.Player;
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.othello.agents.Agent;
 import edu.bu.pas.othello.agents.TimedTreeSearchAgent;
