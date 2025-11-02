@@ -42,7 +42,6 @@ public class Heuristics
 
         //commenting out for test of correctness
         
-        /*
 
         //overall deciding to combine multiple different values to make one heuristic.
         PlayerType mytype = node.getCurrentPlayerType();
@@ -162,7 +161,7 @@ public class Heuristics
         }
         
         return overallHueristicScore;
-         */
+        /* 
 
         //return 1; //testing purposes
         PlayerType mytype = node.getCurrentPlayerType();
@@ -192,7 +191,7 @@ public class Heuristics
             }
         }   
         return positionValue;
-
+        */
 
     }
 }

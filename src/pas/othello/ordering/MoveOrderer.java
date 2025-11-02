@@ -22,20 +22,25 @@ public class MoveOrderer
 
     public static List<Node> orderChildren(List<Node> children)
     {
-        // TODO: complete me!
-        if (children == null || children.isEmpty()) { //base case empty ull
-            return children;
+        int maxDepthSort;
+        if (children.size() < 2) {
+            maxDepthSort = children.size();
         }
-        List<Node> childrenOrdered = new ArrayList<>(children);
-        Collections.sort(childrenOrdered, new Comparator<Node>() { //sorting the children with collections sort
-            @Override
-            public int compare(Node childA, Node childB) {
-                double childAHueristicVal = Heuristics.calculateHeuristicValue(childA); //calculate heuristic now using hashmap caching
-                double childBHueristicVal = Heuristics.calculateHeuristicValue(childB);
-                return Double.compare(childBHueristicVal, childAHueristicVal); // sorted with highest hueristic val first
+        else {
+            maxDepthSort = 2;
+        }
+        for (int i = 0; i < maxDepthSort - 1; i++) {
+            if (Heuristics.calculateHeuristicValue(children.get(i)) > Heuristics.calculateHeuristicValue(children.get(i + 1))) {
+                    Node temp = children.get(i);
+                    children.set(i, children.get(i+1));
+                    children.set(i+1, temp);   
             }
-        });
-        return childrenOrdered;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            System.out.println("end " + children.get(i));
+        }
+        return children;
+        
     }
 
 }
