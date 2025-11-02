@@ -19,6 +19,7 @@ public class MoveOrderer
     extends Object
 {
 
+
     public static List<Node> orderChildren(List<Node> children)
     {
         // TODO: complete me!
@@ -29,12 +30,12 @@ public class MoveOrderer
         Collections.sort(childrenOrdered, new Comparator<Node>() { //sorting the children with collections sort
             @Override
             public int compare(Node childA, Node childB) {
-                double childAHueristicVal = Heuristics.calculateHeuristicValue(childA);
+                double childAHueristicVal = Heuristics.calculateHeuristicValue(childA); //calculate heuristic now using hashmap caching
                 double childBHueristicVal = Heuristics.calculateHeuristicValue(childB);
                 return Double.compare(childBHueristicVal, childAHueristicVal); // sorted with highest hueristic val first
             }
         });
-        return children;
+        return childrenOrdered;
     }
 
 }
