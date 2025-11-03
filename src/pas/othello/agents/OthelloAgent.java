@@ -120,7 +120,7 @@ public class OthelloAgent
     public Node treeSearch(Node n)
     {
         // TODO: complete me!
-        //Implementing Alpha-Beta Pruning using the minimax helper method
+        // Calls Alpha-Beta Pruning using the minimax helper method
         boolean maxPlayer = (n.getCurrentPlayerType() == n.getMaxPlayerType());
         double alpha = Double.NEGATIVE_INFINITY;
         double beta = Double.POSITIVE_INFINITY;
