@@ -2,7 +2,6 @@ package src.pas.othello.heuristics;
 
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,7 +11,6 @@ import edu.bu.pas.othello.game.Game;
 import edu.bu.pas.othello.game.PlayerType;
 // SYSTEM IMPORTS
 import edu.bu.pas.othello.traversal.Node;
-import edu.bu.pas.othello.game.Game.GameView;
 
 
 // JAVA PROJECT IMPORTS
