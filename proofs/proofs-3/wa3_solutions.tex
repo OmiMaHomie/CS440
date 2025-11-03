@@ -1,0 +1,625 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsfonts}
+%\usepackage{geometry}
+\usepackage[paper=a4paper, 
+            left=20.0mm, right=20.0mm, 
+            top=25.0mm, bottom=25.0mm]{geometry}
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{fancyhdr, lastpage, bbding, pmboxdraw}
+\usepackage[usenames,dvipsnames]{color}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\definecolor{darkred}{rgb}{.7,0,0}
+\definecolor{darkgreen}{rgb}{0,.6,0}
+\definecolor{red}{rgb}{.98,0,0}
+\usepackage[colorlinks,pagebackref,pdfusetitle,urlcolor=darkblue,citecolor=darkblue,linkcolor=darkred,bookmarksnumbered,plainpages=false]{hyperref}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{ \fancyplain{}{Course Name} }
+%\chead{ \fancyplain{}{} }
+\rhead{ \fancyplain{}{\today} }
+%\rfoot{\fancyplain{}{page \thepage\ of \pageref{LastPage}}}
+\fancyfoot[RO, LE] {Page \thepage\ of \textcolor{black}{\pageref{LastPage}} }
+\thispagestyle{plain}
+
+%%%%%%%%%%%% LISTING %%%
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\usepackage{verbatim} % used to display code
+\usepackage{fancyvrb}
+\usepackage{acronym}
+\usepackage{amsthm, amsmath}
+\usepackage{tikz}
+    \usetikzlibrary{calc, arrows, arrows.meta, positioning}
+\usepackage{amssymb,amsmath,stackengine}
+\stackMath
+\usepackage{ifthen}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+
+\VerbatimFootnotes % Required, otherwise verbatim does not work in footnotes!
+
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.93}
+
+\lstset{
+	%language=bash,                          % Code langugage
+	basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+	keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+	commentstyle=\color{gray},              % Comments font
+	numbers=left,                           % Line nums position
+	numberstyle=\tiny,                      % Line-numbers fonts
+	stepnumber=1,                           % Step between two line-numbers
+	numbersep=5pt,                          % How far are line-numbers from code
+	backgroundcolor=\color{lightlightgray}, % Choose background color
+	frame=none,                             % A frame around the code
+	tabsize=2,                              % Default tab size
+	captionpos=t,                           % Caption-position = bottom
+	breaklines=true,                        % Automatic line breaking?
+	breakatwhitespace=false,                % Automatic breaks only at whitespace?
+	showspaces=false,                       % Dont make spaces visible
+	showtabs=false,                         % Dont make tabls visible
+	columns=flexible,                       % Column format
+	morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+\newcommand{\question}[1]{\section*{\normalsize #1}}
+% \newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+% \newcommand{\extraspace}[]{}
+%     \begin{center}
+%         \textbf{Use this page for extra space.}
+%     \end{center}
+% }
+
+% Custom envs %
+\newenvironment{answercols}
+  {\begin{center}\begin{tabular}{p{0.45\textwidth}p{0.45\textwidth}}
+   \toprule
+   \textbf{Assertion} & \textbf{Explanation} \\
+   \midrule}
+  {\\ \bottomrule\end{tabular}\end{center}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\vec}[1]{\textbf{#1}}
+
+\newcommand{\squig}{{\scriptstyle\sim\mkern-3.9mu}}
+\newcommand{\lsquigend}{{\scriptstyle\lhd\mkern-3mu}}
+\newcommand{\rsquigend}{{\scriptstyle\rule{.1ex}{0ex}\rhd}}
+\newcounter{sqindex}
+\newcommand\squigs[1]{%
+  \setcounter{sqindex}{0}%
+  \whiledo {\value{sqindex}< #1}{\addtocounter{sqindex}{1}\squig}%
+}
+\newcommand\rsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\squigs{#2}\rsquigend}{\scriptscriptstyle\text{#1\,}}}%
+}
+\newcommand\lsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\lsquigend\squigs{#2}}{\scriptscriptstyle\text{\,#1}}}%
+}
+
+\begin{document}
+    \begin{center}
+        {\Large \textsc{WA 2 Solutions}}
+    \end{center}
+    \begin{center}
+        Om Khadka, U51801771 \\
+        Collabs: N/A
+    \end{center}
+
+    \question{Question 1: Which Points Belong in the Test Set? (25 points)}
+    Suppose you have a learning algorithm that you want to test the performance of. The labels of your data are boolean, and you have $n$ positive examples as well as $n$ negative examples in your dataset. In order to test the performance of your model, you are going to compare the accuracy of your model against the accuracy of a \textit{majority classifier} (i.e. a model that predicts the majority class contained within the training data). You will run a \textit{leave-one-out} cross-validaton experiment (i.e. if you have $x$ samples in your dataset, you will train your model on $x-1$ samples and test on the remaining ``left out'' sample. You will repeat this process until each sample gets to be the ``left out'' test point, training the model from scratch each time). You expect the majority classifier to score about 50\% every time, but it scores 0\%. Why?\newline
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
+    \\
+    Let $D$ be the dataset with $n$ positive examples $(+1)$ and $n$ negative exmaples $(-1)$ such that $|D| = 2n$. \\
+    The question tells us that a leave-one-out cross-validation is performed, such essentially does the following: \\
+    \\
+    - For each fold, remove 1 exmaple $e$ \\
+    - Train a majority classifier on the remaining $2n - 1$ exmaples \\
+    - Predict the class of $e$ \\
+    \\
+    The majority classifier predicts the class with more examples in the training set; Since the total amount of classes in this validation is $2n - 1$, ties are impossible since the dataset is odd. \\
+    \\
+    \begin{answercols} 
+        Let $P = {+1} \times n, N = {-1} \times n$.  &
+        Defining the dataset, with $n$ positives, negatives. \\
+        \\
+        LOOCV trains on $D \setminus e$ such that $|D \setminus e| = 2n - 1$. &
+        Defining the LOOCV procedure.
+    \end{answercols}
+
+    \newpage
+
+    \noindent\textbf{Case 1: $e \in P$} (The left-out example is positive)
+    \begin{answercols}
+        Training set: $(n - 1)$ positives, $n$ negatives. &
+        1 positive class is now removed. \\
+        \\
+        $n > n - 1 \rightarrow$ majority class = negatives. &
+        Since there're more negatives in training. \\
+        \\
+        Prediction for $e \rightarrow$ negative. &
+        Majority classifier rule. \\
+        \\
+        Actual label $\rightarrow$ positive. &
+        This is incorrect.
+    \end{answercols}
+
+    \noindent\textbf{Case 2: $e \in N$} (The left-out exmaple is negative) 
+    \begin{answercols}
+        Training set: $(n - 1)$ negatives, $n$ positives. &
+        1 negative class is now removed. \\
+        \\
+        $n > n - 1 \rightarrow$ majority class = positive. &
+        Since there're more positives in training. \\
+        \\
+        Prediction for $e \rightarrow$ positive. &
+        Majority classifier rule. \\
+        \\
+        Actual label $\rightarrow$ negative. &
+        This is incorrect.
+    \end{answercols}
+
+    \noindent Looking at this result, it becomes clear that the reason why there's a 0\% accuracy in the LOOCV is being the training set's majority class is always the opposite of the left-out exmaple's true class. This is due to the initial perfect balance of the dataset (since we initally have both $n$ amount of possitve, negative classes).
+    \begin{answercols}
+        Both cases, prediction is wrong. \\
+        \\
+        $\forall e \in D, \text{majorit classifier is wrong on } e.$ &
+        Holds for all exmaples. \\
+        \\
+        $\therefore, \text{Accuracy} = 0 / 2n = 0\%$. &
+        No correct predictions.
+    \end{answercols}
+
+    
+    \newpage
+
+
+    \question{Question 2: Combining Multiple Models into an Ensemble (25 points)}
+    Let us say that you have $K$ separate classifiers, each trained on the same data. You combine them together into a single model by letting them vote: given a test point, predict that test point using all $K$ classifiers, and then choose the most-frequently predicted class as your prediction. Such a model is called a \textit{majority voting ensemble}. Suppose that each classifier has error $\epsilon$, and that the errors made by each classifier are independent of the others'. Derive a formula for the error of the ensemble as a function of $K$ and $\epsilon$.\newline
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance).\\
+\\
+    Let there be $K$ independent binary classifiers, each with error probablity $\epsilon$. Let the true label for a given test point be fixed (so class 1 without loss of generality). We can define the random variable $X$ as the num. of classifiers that predict incorrectly. Then, $X ~ \text{Binomial}(K, \epsilon)$, so: \\
+    \\
+    \begin{equation*}
+        P(X = m) = 
+        \begin{pmatrix}
+            K \\
+            m
+        \end{pmatrix}
+        \epsilon^{m}(1 - \epsilon)^{K - m}, m = 0, 1, \ldots, K.
+    \end{equation*}
+    \\
+    The predicted class will be the one recieving more than half of the votes (majority voting). \\
+
+    \begin{answercols}
+        $X ~ \text{Bin}(K, \epsilon)$. &
+        Num. of wronog classifiers is binomial. \\
+        \\
+        Ensemble wrong if majority classifiers wrong. &
+        Defining the majority voting error.
+    \end{answercols}
+
+    \newpage
+    
+    \noindent\textbf{Case 1: $K$ is odd} (Majority threshold is clear). 
+    \begin{answercols}
+        $K = 2t + 1$. &
+        Odd $K$ parameterization. \\
+        \\
+        Majority means $\ge t + 1$ wrong. &
+        More than half when $K$ odd. \\
+        \\
+        \begin{equation*}
+            E(K, \epsilon) = \sum_{m = t + 1}^{K} 
+            \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix}
+            \epsilon^{m}(1 - \epsilon)^{K - m}
+        \end{equation*}. &
+        Sum over all wrong-majority cases. \\
+        \\
+        Substitute $t = \frac{K - 1}{2}$. &
+        Express in terms of $K$. \\
+        \\
+        \begin{equation*}
+            E(K, \epsilon) = \sum_{m = (K + 1) / 2}^{K} 
+            \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix}
+            \epsilon^{m}(1 - \epsilon)^{K - m}
+        \end{equation*}. &
+        Final form for odd $K$.
+    \end{answercols}
+
+    \noindent\textbf{Case 2: $K$ is even} (Tie-breaking is needed).
+    \begin{answercols}
+        $K = 2t$. &
+        Even $K$ parameterization. \\
+        \\
+        Majority means $> t$ wrong. &
+        Strict majority is required. \\
+        \\
+        If $X = t$, then tie $\rightarrow$ random guess. &
+        Tie-breaking assumption. \\
+        \\
+        Error if $X > t$ or $(X = t \text{ and guess is wrong})$. &
+        There're 2 error-producing senarios. \\
+        \\
+        \begin{equation*}
+            E(K, \epsilon) = \sum_{m = t + 1}^{K} \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \begin{pmatrix}
+                K \\
+                t
+            \end{pmatrix} \epsilon^{t}(1 - \epsilon)^{t}
+        \end{equation*}. &
+        Sum over strict majority plus half of tie cases. \\
+        \\
+        Substitute $t = K / 2$. &
+        Express in terms of $K$. \\
+        \\
+        \begin{equation*}
+            E(K, \epsilon) = \sum_{m = K / 2 + 1}^{K} \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \begin{pmatrix}
+                K \\
+                K / 2
+            \end{pmatrix} \epsilon^{K / 2}(1 - \epsilon)^{K / 2}
+        \end{equation*}. &
+        Final form for even $K$.
+    \end{answercols}
+
+    \newpage
+    
+    \noindent Thus, the error rate of the majority voting ensemble is the following: \\
+    \\
+    \begin{equation*}
+        E(K, \epsilon) = 
+        \begin{cases}
+            \sum_{m = (K + 1) / 2}^{K}
+            \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix}
+            \epsilon^{m}(1 - \epsilon)^{K - m}, & K \text{ is odd,} \\\\
+            E(K, \epsilon) = \sum_{m = K / 2 + 1}^{K} 
+            \begin{pmatrix}
+                K \\
+                m
+            \end{pmatrix}
+            \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2}
+            \begin{pmatrix}
+                K \\
+                K / 2
+            \end{pmatrix}
+            \epsilon^{K / 2}(1 - \epsilon)^{K / 2}, & K \text{ is even.}
+        \end{cases}
+    \end{equation*}
+
+    \noindent This should account for independent classifier errors and the majority voting mechanism.
+
+
+    \newpage
+
+
+    \question{Question 3: Linear Activations (25 points)}
+    Suppose you had a neural network where every unit is equipped with a linear activation function, i.e. the output of a unit is some constant $c$ times the weighted sum of its inputs:
+    \begin{enumerate}
+        \item Assume that the network has one hidden layer. For a given assignment of parameters, derive equations for the output of the units in the output layer as a function of the units in the input layer without any explicit mention of the output of the hidden layer. Show that there is a network with no hidden units that computes the same function.
+
+        \item Repeat part 1. but this time for a network with an arbitrary number of hidden layers. Conclude that for a neural network to learn any kind of nonlinear relationships, there must be at least a single unit with a nonlinear activation function.
+    \end{enumerate}
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
+    \\
+    Consider a neural network where every unit has linear activation $g(z) = c \times z$ for some constant $c \neq 0$. \\
+    Let input be $x \in R^{d}$, hidden layers have arbitary widths, and the output be $y \in R^{m}$.\\
+
+    \noindent\textbf{For the case of One Hidden Layer}
+    \begin{answercols}
+        Hidden is $h = c(W_{1}x + b_{1})$. &
+        Applying linear activation. \\
+        \\
+        Output is $y = c(W_{2}h + b_{2})$. &
+        Doing a second linear transformation. \\
+        \\
+        $y = c(W_{2}[c(W_{1}x + b_{1})] + b_{2})$. &
+        Composition. \\
+        \\
+        $y = c^{2}W_{2}W_{1}x + c^{2}W_{2}b_{1} + cb_{2}$. &
+        Expanidng terms. \\
+        \\
+        Let $W' = c^{2}W_{2}W_{1}, b' = c^{2}W_{2}b_{1} + cb_{2}$. &
+        New parameters. \\
+        \\
+        Then, $y = W'x + b'$. &
+        Single-layer linear model. \\
+        \\
+        $\therefore$ The network with 1 hidden layers $\equiv$ to no hidden layer. &
+        It is the same function class.
+    \end{answercols}
+
+    \newpage
+
+    \noindent\textbf{For the case of an Arbitary Number of Hidden Layers}
+    \begin{answercols}
+        $L$ hidden layers, so $y = Wx + b$. &
+        This is a claim we're making, will be \textbf{proven via induction.} \\
+        \\
+        Base case: $L = 0$, $y = Wx + b$. &
+        Answered trivially, there are no hidden layers. \\
+        \\
+        Inductive step: Assume true for $L = k$ layers. & 
+        The inductive hypothesis. \\
+        \\
+        For $L = k + 1$: First $k$ layers are $= h = W_{k}x + b_{k}$. &
+        By hypothesis. \\
+        \\
+        Add layer $k + 1$ such that $y = c(W_{k + 1}h + b_{k + 1})$. &
+        Linear activation. \\
+        \\
+        $y = c(W_{k + 1}(W_{k}x + b_{k}) + b_{k + 1})$. &
+        Composition. \\
+        \\
+        $y = cW_{k + 1}W_{k}x + cW_{k+1}b_{k} + cb_{k + 1}$. &
+        Expanding terms. \\
+        \\
+        This is essentially $y = W'x + b'$. &
+        And is also still linear. \\
+        \\
+        $\therefore$ Is true for all $L \ge 0$. &
+        By induction.
+    \end{answercols}
+
+    \noindent We can also solve for nonlinearity in order for everything to work out in the end too: 
+    \begin{answercols}
+        Any composition of linear maps is linear. &
+        Just a fact of this mathematics. \\
+        \\
+        $\therefore$ Linear networks can only learn from linear $f(x)$. &
+        Showing limited expressivity. \\
+        \\
+        To learn a nonlinear relationship, it'll need $\ge 1$ nonlinear unity. &
+        Showing the necessary condition. \\
+        \\
+        There exists other functions for this case (sigmoid, relu). &
+        The specifics of these function aren't important right now, the main point is that there exist ways to enable nonlinear maps.
+    \end{answercols}
+
+    \noindent Therefore, this proves how a neural network with only linear activation functions, regardless of depth, is equivalent to a single-layer linear model. This THUS means that AT LEAST 1 nonlinear activation function is necessary for learning nonlinear relationships.
+
+
+    \newpage
+
+    \question{Question 4: Datasets with Weights (25 points)}
+    Consider a dataset in which each data point $\Big(x^{(i)}, y_{gt}^{(i)}\Big)$ is associated with some weight $r^{(i)} > 0$. If we want to use a mean squared error for our loss function (like we want to do in temporal difference learning), our objective now becomes:
+    $$L(\vec{\theta}) = \frac{1}{2N}\sum\limits_{i=1}^N r^{(i)}\Big(y_{gt}^{(i)} - f_{\vec{\theta}}(x^{(i)})\Big)^2$$
+
+    \noindent For now, lets simplify $f_{\vec{\theta}}$ to be a linear model (which in an earlier homework you showed that any completely-linear neural network could be reduced to this) $f_{\vec{\theta}}(x) = \vec{\theta}^T\phi(x)$. Plugging this in:
+    $$L(\vec{\theta}) = \frac{1}{2N}\sum\limits_{i=1}^N r^{(i)}\Big(y_{gt}^{(i)} - \vec{\theta}^T\phi(x^{(i)})\Big)^2$$
+
+    \noindent Derive an expression for the optimum $\vec{\theta}^*$ that minimizes this loss function.\newline
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance).\\
+    \\
+    \noindent This is essentially a weighted least squares problem. To solve this we have to do the following:
+    \begin{itemize}
+        \item Write the loss in matrix/vector notation
+        \item Tke the gradient with respect to $\overset{\rightarrow}{\theta}$
+        \item Set the gradient to 0 and solve for $\overset{\rightarrow}{\theta}^{*}$
+        \item Make sure its a minimum
+    \end{itemize}
+
+    \noindent Before solving this though, I will clarify on some variables within the expression: 
+    \begin{itemize}
+        \item \begin{equation*}
+            L(\theta) = \frac{1}{2N} \sum_{i=1}^{N} r^{(i)} (y_{gt}^{(i)} - \theta^{T} \phi(x^{(i)}))^{2}
+        \end{equation*}
+        \item \begin{equation*}
+            \Phi \in \mathbb{R}^{N \times d} \text{ with } \Phi_{i} = \phi(x^{(i)})^{T}
+        \end{equation*}
+        \item \begin{equation*}
+            y = [y_{gt}^{(i)}, \ldots, y_{gt}^{(N)}]^{T}
+        \end{equation*}
+        \item \begin{equation*}
+            R = \text{diag}(r^{(1)}, \ldots, r^{(N)})
+        \end{equation*}
+    \end{itemize}
+
+    \newpage
+
+    \begin{answercols}
+        $L(\theta) = \frac{1}{2N}(y - \Phi\theta)^{T} R(y - \Phi\theta)$. &
+        This is the matrix form of the weighted MSE. \\
+        \\
+        $L(\theta) = \frac{1}{2N}[y^{T} Ry - 2y^{T} R\Phi\theta + \theta^{T} \Phi^{T} R\Phi\theta]$. &
+        Expanding via quadratic expansion. \\
+        \\
+        $\nabla_{\theta}L(\theta) = \frac{1}{2n}[-2\Phi^{T} Ry + 2\Phi^{T} R\Phi\theta]$. &
+        Performing gradient calculation. \\
+        \\
+        Set up $\nabla_{\theta}L(\theta) = 0$. &
+        This is the first-order condition. \\
+        \\
+        $-\Phi^{T} Ry + \Phi^{T} R\Phi\theta = 0$. &
+        Simlify by dropping $\frac{1}{N}$. \\
+        \\
+        $\Phi^{T} R\Phi\theta = \Phi^{T} Ry$. &
+        Normal equations. \\
+        \\
+        Assume that $\Phi^{T} R\Phi$ is invertible. &
+        This is the full-rank condition. \\
+        \\
+        $\theta^{*} = (\Phi^{T} R\Phi)^{-1}\Phi^{T} Ry$. &
+        This is the optimal solution. \\
+        \\
+        Hessian $\nabla_{\theta}^{2}L(\theta) = \frac{1}{N}\Phi^{T}R\Phi \succ 0$. &
+        Basically saying that the positive definitive is the minimum.
+    \end{answercols}
+
+    \noindent In conclusion, the optimal paramter for the weighted linear regression is the following:
+    \begin{equation*}
+        \theta^{*} = (\Phi^{T} R\Phi)^{-1}\Phi^{T} Ry
+    \end{equation*}
+    where $R$ is the diagonal weight matrix, $\Phi$ is the feature matrix, and $y$ is the tgt vector.
+
+
+    \newpage
+
+
+    \question{Extra Credit: Decision Trees with Missing Values (25 points)}
+    Standard decision trees are not able to handle examples where one (or more) of the attributes contain an unknown value. Any unknown or unfilled entry in an example is called a ``missing value'', and our decision tree will fail if presented with such an example:
+    \begin{enumerate}
+        \item First, we need a way to classify any example that contains missing value(s). Suppose an example $\vec{x}$ which has a missing value for attribute $A$, and that the decision tree test for $A$ at a node that $\vec{x}$ reaches. One way to handle this missing value is to pretend that $\vec{x}$ has \textit{all possible} values of $A$, and to weight each value according to the frequency that the values appear in the dataset the node was constructed from. This classification algorithm should follow all branches at any node for which a value is missing and should multiply weights along each path. Design a classification algorithm for decision trees that has this behavior.
+
+        \item Now, modify the information gain calculation so that when constructing a node from dataset $D$, the examples with missing values for any of the remaining attributes are given ``as-if'' values according to the frequencies of those values in $D$.
+    \end{enumerate}
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
+    \\
+    This problem can be solved with the probablisitc split method. Since the desicion tree has missing values, we treat missing values as having probablity distribution over possible values, then use frctional examples instead of just throwing away that data.\\
+    \\
+    Let a decision tree be constructed from dataset $D$. Each node will store the following: 
+    \begin{itemize}
+        \item The attribute $A$ to test
+        \item The frequency distribution $P_{A}(v)$ of each value $v \in \text{Values}(A)$ from the training data at that node.
+        \item For leaves specifically, the class distribution.
+    \end{itemize}
+
+    The classification algorithm can be described as follows:
+
+    \begin{answercols}
+        Input is exmaple $\overset{\rightarrow}{x}$, tree $T$. &
+        The exmaple may have missing values. \\
+        \\
+        Ouput is the predicted class $\overset{\wedge}{y}$. &
+        Weighted combination. \\
+        \\
+        Init. with leaves = $\theta$. &
+        Store as (leaf, weight) pairs. \\
+        \\
+        $\text{traverse}(node, w)$. &
+        Do a recusive traversal with weight $w$. \\
+        \\
+        If the node is a leaf, then $\text{leaves.add}((node, w))$. &
+        We've reached a leaf with weight $w$. \\
+        \\
+        Else, let $A$ = node's attribute. &
+        Defining a decision node. \\
+        \\
+        If $\overset{\rightarrow}{x}[A]$ is not missing, \\
+        $v = \overset{\rightarrow}{x}[A]$, \\
+        child = node.child[v], \\
+        then traverse(child, w). &
+        On a normal case, we'll following the corresponding branches of same weight. \\
+        \\
+        Else, if missing $\overset{\rightarrow}{x}[A]$.\\ 
+        For each $v \in$ Values(A): \\
+        $w_{v} = w \times P_{A}(v)$ \\
+        child = node.child[v] \\
+        traverse(child, $w_{v}$) &
+        If the value is missing, then for all possible values, we get the weight by value frequency, go the corresponding branch, then do a recursive call. \\
+        \\
+        Start of with traverse(root, 1.0) &
+        The init. call. \\
+        \\
+        Output (prediction): \\
+        $\overset{\wedge}{y} = \argmax_{c}\sum_{(\text{leaf}, w) \in \text{leaves}}w \times P_{\text{leaf}}(c)$. &
+        The weighted vote.
+    \end{answercols}
+
+    \newpage
+
+    \noindent For the modified information gain calculations, we can suppose at node contruction with dataset $D$, let $D_{\text{complete}} \subset D$ be exmaples with known attribute $A$. 
+    \begin{answercols}
+        Let $D_{\text{miss}} = D \ D_{\text{complete}}$. &
+        All exmaples missing $A$. \\
+        \\
+        Compute $( P_A(v) = \frac{	D_{\text{complete}}^v	}{	D_{\text{complete}}	} )$. &
+        All value frequencies from the complete data. \\
+        \\
+        For each $x \in D_{\text{miss}}$ \\
+        For each $v \in \text{Values}(A)$. &
+        To handle missing exmaples, and then to split up into all values. \\
+        \\
+        Create a fractional example $(x, y)$ with weight $w = P_{A}(v)$. &
+        Weight by frequency. \\
+        \\
+        Let $D' = D_{\text{complete}} \cup \{ \text{fractional } D_{\text{miss}} \}$. &
+        Make an augmented dataset. \\
+        \\
+        Original entropy is $H(D) = -\sum_{c}P(c)\log P(c)$. &
+        Using weighted counts. \\
+        \\
+        Weight split is $H(D || A) = \sum_{v}P(v)H(D_{v})$. &
+        Conditional entropy. \\
+        \\
+        $( P(v) = \frac{\sum_{x \in D'} \mathbb{I}[x.A=v] \cdot w_x}{	D'	} )$. &
+        The weighted probability. \\
+        \\
+        $H(D_{v}) = -\sum_{c}P(c || D_{v}) \log P(c || D_{v})$. &
+        Entropy of split. \\
+        \\
+        $P(c || D_{v}) = \frac{\sum_{x \in D_{v}} \mathbb{I}[x.y = c] \times w_{x}}{\sum_{x \in D_{v}} w_{x}}$. &
+        The weighted class distribution. \\
+        \\
+        Info gain is $IG(A) = H(D) - H(D || A)$. &
+        The standard formula with weights.
+    \end{answercols}
+
+    \newpage
+
+    \noindent For a tree construction with missing values, the following algorithm could work: 
+    \begin{answercols}
+        Suppose a procedure, $\text{build\_tree} (D, \text{attribute})$. &
+        Defining recursive construction. \\
+        \\
+        IF stopping critierion is the following \\
+        Return leaf with $P(c)$. &
+        The base case. \\
+        \\
+        FOR EACH attribute $A \in \text{attributes}$. &
+        This is the candidate splits. \\
+        \\
+        $A^{*} = \argmax_{A}IG(A)$. &
+        The best attribute. \\
+        \\
+        Create node testing $A^{*}$. \\
+        \\
+        Store $P_{A^{*}}(v)$ from $D$. &
+        For the classification phase. \\
+        \\
+        FOR EACH $v \in \text{Values}(A^{*})$. &
+        Build the children. \\
+        \\
+        $D_{v} = \{x \in D : x.A^{*} = v\} \cup \{\text{fractional }x \in D_{\text{miss}} \text{ with weight }P_{A^{*}}(v)\}$. &
+        The weighted split. \\
+        \\
+        child = build\_tree($D_{v}$, attributes $\ \{A^{*}\}$). &
+        The recursive call.\\
+        \\
+        Return node
+    \end{answercols}
+
+    \noindent In total, this series of algorithm should handle missing values consistently in both classification and traning. This is because: 
+    \begin{itemize}
+        \item The probablistic splits are based off of value frequencies during classififcation.
+        \item The algorithm employs fractional exmaples based on value distributions during traning.
+        \item And weight propagation is maintained throughout both phases
+    \end{itemize}
+    Thus leading to no thrown away data.
+\end{document}
