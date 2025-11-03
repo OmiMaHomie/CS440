@@ -3,10 +3,6 @@ package src.pas.othello.ordering;
 
 // SYSTEM IMPORTS
 import edu.bu.pas.othello.traversal.Node;
-import src.pas.othello.heuristics.Heuristics;
-
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Collections;
 
@@ -22,23 +18,31 @@ public class MoveOrderer
 
     public static List<Node> orderChildren(List<Node> children)
     {
-        int maxDepthSort;
-        if (children.size() < 2) {
-            maxDepthSort = children.size();
+        /*
+        for (int i = 0; i < children.size(); i++) {
+            System.out.println("start " + children.get(i));
         }
-        else {
-            maxDepthSort = 2;
-        }
-        for (int i = 0; i < maxDepthSort - 1; i++) {
-            if (Heuristics.calculateHeuristicValue(children.get(i)) > Heuristics.calculateHeuristicValue(children.get(i + 1))) {
-                    Node temp = children.get(i);
-                    children.set(i, children.get(i+1));
-                    children.set(i+1, temp);   
+
+        for (int i = 0; i < children.size() - 1; i++) {
+            Boolean swapped = false;
+            for (int j = 0; j < i - i - 1; j++) {
+                if (Heuristics.calculateHeuristicValue(children.get(j)) < Heuristics.calculateHeuristicValue(children.get(j + 1))) {
+                    Node temp = children.get(j);
+                    children.set(j, children.get(j+1));
+                    children.set(j+1, temp);
+                    swapped = true;
+                }
+            }
+            if (swapped == false) {
+                break;
             }
         }
+       
         for (int i = 0; i < children.size(); i++) {
             System.out.println("end " + children.get(i));
         }
+        */
+        Collections.shuffle(children); //testing shuffle because seems to be sorted getting same error
         return children;
         
     }
