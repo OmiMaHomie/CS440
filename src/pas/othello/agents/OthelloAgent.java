@@ -69,29 +69,43 @@ public class OthelloAgent
         {
             //if no nodes available to play (game over terminal) return empty list
             List<Node> children = new ArrayList<>();
-            if (getGameView().isGameOver()) {
-                return children;
-            }
+            //System.out.println(getCurrentPlayerType());
             //use frontier to get the available legal moves
+            //System.out.println(getCurrentPlayerType());
             Set<Coordinate> legalMoves = getGameView().getFrontier(getCurrentPlayerType()); //getting frontier for my current player
+            PlayerType otherType = getOtherPlayerType();
             if (!legalMoves.isEmpty()) { //case that we have legal moves to make
+                //System.out.println(getCurrentPlayerType());
                 for (Coordinate move : legalMoves) {
                     Game newGame = new Game(getGameView()); //creating new game object for this new move
                     newGame.applyMove(move); //applied the move in the new game
-                    OthelloNode child = new OthelloNode(getCurrentPlayerType(), newGame.getView(), getDepth() + 1);
+                    /*
+                    System.out.println("-----");
+                    System.out.println(getCurrentPlayerType());
+                    System.out.println(otherType);
+                    System.out.println(getDepth());
+                    System.out.println("max " + getMaxPlayerType());
+                    System.out.println("-----");
+                     */
+                    newGame.setCurrentPlayerType(otherType);
+                    OthelloNode child = new OthelloNode(getMaxPlayerType(), newGame.getView(), getDepth() + 1);
+                    //System.out.println(getMaxPlayerType());
                     child.setLastMove(move); //adding last move
                     children.add(child);
                 }
             }
             else { //legal moves empty no moves
                 Game newGame = new Game(getGameView());
-                newGame.playTurn(); //it seems like playTurn would be skipping turn based off the name of the method
-                OthelloNode child = new OthelloNode(getCurrentPlayerType(), newGame.getView(), getDepth() + 1);
+                newGame.setCurrentPlayerType(getOtherPlayerType()); //setting current player type to the other type
+                newGame.setTurnNumber(newGame.getTurnNumber() + 1);
+                OthelloNode child = new OthelloNode(getMaxPlayerType(), newGame.getView(), getDepth() + 1);
+                child.setLastMove(null);
                 children.add(child);
+                
             }
             return children;
         }
-    }
+        }
     private final Random random;
 
     public OthelloAgent(final PlayerType myPlayerType,
@@ -124,8 +138,8 @@ public class OthelloAgent
         boolean maxPlayer = (n.getCurrentPlayerType() == n.getMaxPlayerType());
         double alpha = Double.NEGATIVE_INFINITY;
         double beta = Double.POSITIVE_INFINITY;
-        int maxSearchDepth = 4; //set to 6 as max depth, higher search more time can edit this change with heuristic
-        n = alphaBetaPruning(n, maxSearchDepth, alpha, beta, maxPlayer); //defined a set max search depth when running
+        int maxSearchDepth = 2; //set to 1 for testing
+        n = alphaBetaPruning(n, maxSearchDepth, alpha, beta, maxPlayer); //defined a set max search depth when running]
         return n;
     }
 
@@ -147,7 +161,7 @@ public class OthelloAgent
         for (Node child : MoveOrderer.orderChildren(node.getChildren())) {
             Node n = alphaBetaPruning(child, depth - 1, alpha, beta, false); //recursive call subtracting depth
             double value = n.getUtilityValue();
-
+            //System.out.println(n.getUtilityValue());
             if (value > maxValue) {
                 maxValue = value;
                 bestNode = child;
@@ -170,7 +184,7 @@ public class OthelloAgent
         for (Node child : MoveOrderer.orderChildren(node.getChildren())) {
             Node n = alphaBetaPruning(child, depth - 1, alpha, beta, true); 
             double value = n.getUtilityValue();
-
+            //System.out.println(n.getUtilityValue());
             if (value < minValue) {
                 minValue = value;
                 bestNode = child;

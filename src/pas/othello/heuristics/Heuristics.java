@@ -1,7 +1,9 @@
 package src.pas.othello.heuristics;
 
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.bu.pas.othello.utils.Coordinate;
@@ -20,10 +22,27 @@ import edu.bu.pas.othello.game.Game.GameView;
 public class Heuristics
     extends Object
 {
-
-    public static double calculateHeuristicValue(Node node)
+    private static Map<Long, Double> cachedHeuristics = new HashMap<>(); // Used for heuristic lookup
+    public static double calculateHeuristicValue(Node node) {
+        // Check cache first
+        long key = node.hashCode(); //node has function to get hash value
+        if (cachedHeuristics.containsKey(key)) { //if contiains key just grabbing and returning stored val
+            //System.out.println("got cache for " + key);
+            return cachedHeuristics.get(key);
+        } else {
+            //System.out.println("calculating heuristic not in cache");
+            double value = getHeuristicVal(node); // running get heuristic then storing
+            cachedHeuristics.put(key, value);
+            return value;
+        }
+    }
+    public static double getHeuristicVal(Node node)
     {
         // TODO: complete me!
+
+        //commenting out for test of correctness
+        
+
         //overall deciding to combine multiple different values to make one heuristic.
         PlayerType mytype = node.getCurrentPlayerType();
         PlayerType opponentType = node.getOtherPlayerType();
@@ -67,14 +86,14 @@ public class Heuristics
         //graph that has weights for tiles being there
         //corners strongest, middle sort of strong, adjacent corners weak
         int[][] weightedGraph = {
-            {100, -30,  10,   5,   5,  10, -30, 100},
+            {100, -30,  15,   10,   10,  15, -30, 100},
             {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
-            { 10,  -5,  15,   3,   3,  15,  -5,  10},
-            {  5,  -5,   3,   3,   3,   3,  -5,   5},
-            {  5,  -5,   3,   3,   3,   3,  -5,   5},
-            { 10,  -5,  15,   3,   3,  15,  -5,  10},
+            { 15,  -5,  15,   3,   3,  15,  -5,  15},
+            {  10,  -5,   3,   3,   3,   3,  -5,   10},
+            {  10,  -5,   3,   3,   3,   3,  -5,   10},
+            { 15,  -5,  15,   3,   3,  15,  -5,  15},
             {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
-            {100, -30,  10,   5,   5,  10, -30, 100}
+            {100, -30,  15,   10,   10,  15, -30, 100}
         };
         int positionValue = 0;
         for (int i = 0; i < weightedGraph.length; i++) {
@@ -127,7 +146,7 @@ public class Heuristics
             pieceDifference * 2 +
             cornerDifference * 4 + 
             positionValue;
-            //want to control the walls (not the x off corner)
+            //want to control the corners and walls (not the x off corner)
             //control the corners very strong
         }
         //end game
@@ -140,6 +159,39 @@ public class Heuristics
             positionValue;
             //end game want to have a higher piece count
         }
+        
         return overallHueristicScore;
+        /* 
+
+        //return 1; //testing purposes
+        PlayerType mytype = node.getCurrentPlayerType();
+        PlayerType opponentType = node.getOtherPlayerType();
+        PlayerType[][] board = node.getGameView().getCells();
+        //flips
+        //this  uses the wouldSandwichOppositePlayerInDirection which estimates the strength of a move with its flip 
+        int[][] weightedGraph = {
+            {100, -30,  15,   10,   10,  15, -30, 100},
+            {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
+            { 15,  -5,  15,   3,   3,  15,  -5,  15},
+            {  10,  -5,   3,   3,   3,   3,  -5,   10},
+            {  10,  -5,   3,   3,   3,   3,  -5,   10},
+            { 15,  -5,  15,   3,   3,  15,  -5,  15},
+            {-30, -60,  -5,  -5,  -5,  -5, -60, -30},
+            {100, -30,  15,   10,   10,  15, -30, 100}
+        };
+        int positionValue = 0;
+        for (int i = 0; i < weightedGraph.length; i++) {
+            for (int j = 0; j < weightedGraph[i].length; j++) {
+                if (board[i][j] == mytype) {
+                    positionValue += weightedGraph[i][j]; //adding i have control
+                }
+                if (board[i][j] == opponentType) {
+                    positionValue -= weightedGraph[i][j]; //subtraction because opponent controls
+                }
+            }
+        }   
+        return positionValue;
+        */
+
     }
 }
