@@ -121,17 +121,17 @@
 
     \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
     \\
-    Let $D$ be the dataset with $n$ positive examples $(+1)$ and $n$ negative exmaples $(-1)$ such that $|D| = 2n$. \\
+    Let $D$ be the dataset with $n$ positive examples $(+1)$ and $n$ negative examples $(-1)$ such that $|D| = 2n$. \\
     The question tells us that a leave-one-out cross-validation is performed, such essentially does the following: \\
     \\
-    - For each fold, remove 1 exmaple $e$ \\
-    - Train a majority classifier on the remaining $2n - 1$ exmaples \\
+    - For each fold, remove 1 example $e$ \\
+    - Train a majority classifier on the remaining $2n - 1$ examples \\
     - Predict the class of $e$ \\
     \\
     The majority classifier predicts the class with more examples in the training set; Since the total amount of classes in this validation is $2n - 1$, ties are impossible since the dataset is odd. \\
     \\
     \begin{answercols} 
-        Let $P = {+1} \times n, N = {-1} \times n$.  &
+        Let $P = \{+1\} \times n, N = \{-1\} \times n$.  &
         Defining the dataset, with $n$ positives, negatives. \\
         \\
         LOOCV trains on $D \setminus e$ such that $|D \setminus e| = 2n - 1$. &
@@ -155,7 +155,7 @@
         This is incorrect.
     \end{answercols}
 
-    \noindent\textbf{Case 2: $e \in N$} (The left-out exmaple is negative) 
+    \noindent\textbf{Case 2: $e \in N$} (The left-out example is negative) 
     \begin{answercols}
         Training set: $(n - 1)$ negatives, $n$ positives. &
         1 negative class is now removed. \\
@@ -170,16 +170,22 @@
         This is incorrect.
     \end{answercols}
 
-    \noindent Looking at this result, it becomes clear that the reason why there's a 0\% accuracy in the LOOCV is being the training set's majority class is always the opposite of the left-out exmaple's true class. This is due to the initial perfect balance of the dataset (since we initally have both $n$ amount of possitve, negative classes).
+    \noindent Looking at this result, it becomes clear that the reason why there's a 0\% accuracy in the LOOCV is being the training set's majority class is always the opposite of the left-out example's true class. This is due to the initial perfect balance of the dataset (since we initially have both $n$ amount of positive, negative classes).
     \begin{answercols}
         Both cases, prediction is wrong. \\
         \\
-        $\forall e \in D, \text{majorit classifier is wrong on } e.$ &
-        Holds for all exmaples. \\
+        $\forall e \in D, \text{majority classifier is wrong on } e.$ &
+        Holds for all examples. \\
         \\
         $\therefore, \text{Accuracy} = 0 / 2n = 0\%$. &
         No correct predictions.
     \end{answercols}
+
+    \textit{Questions for this question:}
+    \begin{itemize}
+        \item Should I explicitly prove that $n > n-1$ guarantees no ties, or is this obvious enough for the proof?
+        \item To be honest, while I was able to get to this conclusion, I find this conclusion to be kinda paradoxical? Why wouldn't to be a ~50\% accuracy? Is it just that this specific case somehow breaks the algorithm?
+    \end{itemize}
 
     
     \newpage
@@ -190,22 +196,17 @@
 
     \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance).\\
 \\
-    Let there be $K$ independent binary classifiers, each with error probablity $\epsilon$. Let the true label for a given test point be fixed (so class 1 without loss of generality). We can define the random variable $X$ as the num. of classifiers that predict incorrectly. Then, $X ~ \text{Binomial}(K, \epsilon)$, so: \\
+    Let there be $K$ independent binary classifiers, each with error probablity $\epsilon$. Let the true label for a given test point be fixed (so class 1 without loss of generality). We can define the random variable $X$ as the number of classifiers that predict incorrectly. Then, $X \sim \text{Binomial}(K, \epsilon)$, so: \\
     \\
     \begin{equation*}
-        P(X = m) = 
-        \begin{pmatrix}
-            K \\
-            m
-        \end{pmatrix}
-        \epsilon^{m}(1 - \epsilon)^{K - m}, m = 0, 1, \ldots, K.
+        P(X = m) = \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m}, m = 0, 1, \ldots, K.
     \end{equation*}
     \\
-    The predicted class will be the one recieving more than half of the votes (majority voting). \\
+    The predicted class will be the one receiving more than half of the votes (majority voting). \\
 
     \begin{answercols}
-        $X ~ \text{Bin}(K, \epsilon)$. &
-        Num. of wronog classifiers is binomial. \\
+        $X \sim \text{Bin}(K, \epsilon)$. &
+        number of wrong classifiers is binomial. \\
         \\
         Ensemble wrong if majority classifiers wrong. &
         Defining the majority voting error.
@@ -222,12 +223,7 @@
         More than half when $K$ odd. \\
         \\
         \begin{equation*}
-            E(K, \epsilon) = \sum_{m = t + 1}^{K} 
-            \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix}
-            \epsilon^{m}(1 - \epsilon)^{K - m}
+            E(K, \epsilon) = \sum_{m = t + 1}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m}
         \end{equation*}. &
         Sum over all wrong-majority cases. \\
         \\
@@ -235,12 +231,7 @@
         Express in terms of $K$. \\
         \\
         \begin{equation*}
-            E(K, \epsilon) = \sum_{m = (K + 1) / 2}^{K} 
-            \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix}
-            \epsilon^{m}(1 - \epsilon)^{K - m}
+            E(K, \epsilon) = \sum_{m = (K + 1) / 2}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m}
         \end{equation*}. &
         Final form for odd $K$.
     \end{answercols}
@@ -257,16 +248,10 @@
         Tie-breaking assumption. \\
         \\
         Error if $X > t$ or $(X = t \text{ and guess is wrong})$. &
-        There're 2 error-producing senarios. \\
+        There're 2 error-producing scenarios. \\
         \\
         \begin{equation*}
-            E(K, \epsilon) = \sum_{m = t + 1}^{K} \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \begin{pmatrix}
-                K \\
-                t
-            \end{pmatrix} \epsilon^{t}(1 - \epsilon)^{t}
+            E(K, \epsilon) = \sum_{m = t + 1}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \binom{K}{t} \epsilon^{t}(1 - \epsilon)^{t}
         \end{equation*}. &
         Sum over strict majority plus half of tie cases. \\
         \\
@@ -274,13 +259,7 @@
         Express in terms of $K$. \\
         \\
         \begin{equation*}
-            E(K, \epsilon) = \sum_{m = K / 2 + 1}^{K} \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \begin{pmatrix}
-                K \\
-                K / 2
-            \end{pmatrix} \epsilon^{K / 2}(1 - \epsilon)^{K / 2}
+            E(K, \epsilon) = \sum_{m = K / 2 + 1}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \binom{K}{K / 2} \epsilon^{K / 2}(1 - \epsilon)^{K / 2}
         \end{equation*}. &
         Final form for even $K$.
     \end{answercols}
@@ -292,27 +271,17 @@
     \begin{equation*}
         E(K, \epsilon) = 
         \begin{cases}
-            \sum_{m = (K + 1) / 2}^{K}
-            \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix}
-            \epsilon^{m}(1 - \epsilon)^{K - m}, & K \text{ is odd,} \\\\
-            E(K, \epsilon) = \sum_{m = K / 2 + 1}^{K} 
-            \begin{pmatrix}
-                K \\
-                m
-            \end{pmatrix}
-            \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2}
-            \begin{pmatrix}
-                K \\
-                K / 2
-            \end{pmatrix}
-            \epsilon^{K / 2}(1 - \epsilon)^{K / 2}, & K \text{ is even.}
+            \sum_{m = (K + 1) / 2}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m}, & K \text{ is odd,} \\\\
+            \sum_{m = K / 2 + 1}^{K} \binom{K}{m} \epsilon^{m}(1 - \epsilon)^{K - m} + \frac{1}{2} \binom{K}{K / 2} \epsilon^{K / 2}(1 - \epsilon)^{K / 2} & K \text{ is even.}
         \end{cases}
     \end{equation*}
 
     \noindent This should account for independent classifier errors and the majority voting mechanism.
+
+    \textit{Questions for this question:}
+    \begin{itemize}
+        \item Should I further clarify the rate at which ensemble error decreases with K, or is deriving the exact formula sufficient?
+    \end{itemize}
 
 
     \newpage
@@ -328,26 +297,26 @@
     \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
     \\
     Consider a neural network where every unit has linear activation $g(z) = c \times z$ for some constant $c \neq 0$. \\
-    Let input be $x \in R^{d}$, hidden layers have arbitary widths, and the output be $y \in R^{m}$.\\
+    Let input be $\mathbf{x} \in R^{d}$, hidden layers have arbitary widths, and the output be $y \in R^{m}$.\\
 
     \noindent\textbf{For the case of One Hidden Layer}
     \begin{answercols}
-        Hidden is $h = c(W_{1}x + b_{1})$. &
+        Hidden is $h = c(W_{1}\mathbf{x} + b_{1})$. &
         Applying linear activation. \\
         \\
         Output is $y = c(W_{2}h + b_{2})$. &
         Doing a second linear transformation. \\
         \\
-        $y = c(W_{2}[c(W_{1}x + b_{1})] + b_{2})$. &
+        $y = c(W_{2}[c(W_{1}\mathbf{x} + b_{1})] + b_{2})$. &
         Composition. \\
         \\
-        $y = c^{2}W_{2}W_{1}x + c^{2}W_{2}b_{1} + cb_{2}$. &
+        $y = c^{2}W_{2}W_{1}\mathbf{x} + c^{2}W_{2}b_{1} + cb_{2}$. &
         Expanidng terms. \\
         \\
         Let $W' = c^{2}W_{2}W_{1}, b' = c^{2}W_{2}b_{1} + cb_{2}$. &
         New parameters. \\
         \\
-        Then, $y = W'x + b'$. &
+        Then, $y = W'\mathbf{x} + b'$. &
         Single-layer linear model. \\
         \\
         $\therefore$ The network with 1 hidden layers $\equiv$ to no hidden layer. &
@@ -358,7 +327,7 @@
 
     \noindent\textbf{For the case of an Arbitary Number of Hidden Layers}
     \begin{answercols}
-        $L$ hidden layers, so $y = Wx + b$. &
+        Given a network of hidden layers, $L$, of depth $k$, $\exists W, b$ such that $y = Wx + b$. &
         This is a claim we're making, will be \textbf{proven via induction.} \\
         \\
         Base case: $L = 0$, $y = Wx + b$. &
@@ -367,19 +336,19 @@
         Inductive step: Assume true for $L = k$ layers. & 
         The inductive hypothesis. \\
         \\
-        For $L = k + 1$: First $k$ layers are $= h = W_{k}x + b_{k}$. &
+        For $L = k + 1$: First $k$ layers are $= h = W_{k}\mathbf{x} + b_{k}$. &
         By hypothesis. \\
         \\
         Add layer $k + 1$ such that $y = c(W_{k + 1}h + b_{k + 1})$. &
         Linear activation. \\
         \\
-        $y = c(W_{k + 1}(W_{k}x + b_{k}) + b_{k + 1})$. &
+        $y = c(W_{k + 1}(W_{k}\mathbf{x} + b_{k}) + b_{k + 1})$. &
         Composition. \\
         \\
-        $y = cW_{k + 1}W_{k}x + cW_{k+1}b_{k} + cb_{k + 1}$. &
+        $y = cW_{k + 1}W_{k}\mathbf{x} + cW_{k+1}b_{k} + cb_{k + 1}$. &
         Expanding terms. \\
         \\
-        This is essentially $y = W'x + b'$. &
+        This is essentially $y = W'\mathbf{x} + b'$. &
         And is also still linear. \\
         \\
         $\therefore$ Is true for all $L \ge 0$. &
@@ -391,7 +360,7 @@
         Any composition of linear maps is linear. &
         Just a fact of this mathematics. \\
         \\
-        $\therefore$ Linear networks can only learn from linear $f(x)$. &
+        $\therefore$ Linear networks can only learn from linear $f(\mathbf{x})$. &
         Showing limited expressivity. \\
         \\
         To learn a nonlinear relationship, it'll need $\ge 1$ nonlinear unity. &
@@ -403,6 +372,12 @@
 
     \noindent Therefore, this proves how a neural network with only linear activation functions, regardless of depth, is equivalent to a single-layer linear model. This THUS means that AT LEAST 1 nonlinear activation function is necessary for learning nonlinear relationships.
 
+    \textit{Questions for this question:}
+    \begin{itemize}
+        \item For the induction proof in the second part, should I be more explicit about the dimensionality of the weight matrices and how they compose? I showed the linear composition but I dunno if I should then prove how the resulting matrix has the correct dimensions.
+        \item The last part of my answer shows how at least one nonlinear unit is necessary for nonlinear relationships. Is how I explained it sufficent?
+        \item For the arbitary layers case, should I specify that all layers have the same constant $c$, or would the result hold even if each layer had a different linear constant $c_{i}$?
+    \end{itemize}
 
     \newpage
 
@@ -420,25 +395,25 @@
     \noindent This is essentially a weighted least squares problem. To solve this we have to do the following:
     \begin{itemize}
         \item Write the loss in matrix/vector notation
-        \item Tke the gradient with respect to $\overset{\rightarrow}{\theta}$
+        \item Take the gradient with respect to $\overset{\rightarrow}{\theta}$
         \item Set the gradient to 0 and solve for $\overset{\rightarrow}{\theta}^{*}$
         \item Make sure its a minimum
     \end{itemize}
 
-    \noindent Before solving this though, I will clarify on some variables within the expression: 
+    \noindent Before solving this though, I will clarify on some variables that'll be used for the solution:
     \begin{itemize}
         \item \begin{equation*}
             L(\theta) = \frac{1}{2N} \sum_{i=1}^{N} r^{(i)} (y_{gt}^{(i)} - \theta^{T} \phi(x^{(i)}))^{2}
-        \end{equation*}
+        \end{equation*}the weighted mean squared error loss function.
         \item \begin{equation*}
             \Phi \in \mathbb{R}^{N \times d} \text{ with } \Phi_{i} = \phi(x^{(i)})^{T}
-        \end{equation*}
+        \end{equation*}the feature matrix
         \item \begin{equation*}
             y = [y_{gt}^{(i)}, \ldots, y_{gt}^{(N)}]^{T}
-        \end{equation*}
+        \end{equation*}the target vector
         \item \begin{equation*}
             R = \text{diag}(r^{(1)}, \ldots, r^{(N)})
-        \end{equation*}
+        \end{equation*}the weight matrix
     \end{itemize}
 
     \newpage
@@ -472,11 +447,11 @@
         Basically saying that the positive definitive is the minimum.
     \end{answercols}
 
-    \noindent In conclusion, the optimal paramter for the weighted linear regression is the following:
+    \noindent In conclusion, the optimal parameter for the weighted linear regression is the following:
     \begin{equation*}
         \theta^{*} = (\Phi^{T} R\Phi)^{-1}\Phi^{T} Ry
     \end{equation*}
-    where $R$ is the diagonal weight matrix, $\Phi$ is the feature matrix, and $y$ is the tgt vector.
+    where $R$ is the diagonal weight matrix, $\Phi$ is the feature matrix, and $y$ is the target vector.
 
 
     \newpage
@@ -491,7 +466,7 @@
     \end{enumerate}
     \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
     \\
-    This problem can be solved with the probablisitc split method. Since the desicion tree has missing values, we treat missing values as having probablity distribution over possible values, then use frctional examples instead of just throwing away that data.\\
+    This problem can be solved with the probabilistic split method. Since the desicion tree has missing values, we treat missing values as having probablity distribution over possible values, then use fractional examples instead of just throwing away that data.\\
     \\
     Let a decision tree be constructed from dataset $D$. Each node will store the following: 
     \begin{itemize}
@@ -503,13 +478,13 @@
     The classification algorithm can be described as follows:
 
     \begin{answercols}
-        Input is exmaple $\overset{\rightarrow}{x}$, tree $T$. &
-        The exmaple may have missing values. \\
+        Input is example $\overset{\rightarrow}{x}$, tree $T$. &
+        The example may have missing values. \\
         \\
         Ouput is the predicted class $\overset{\wedge}{y}$. &
         Weighted combination. \\
         \\
-        Init. with leaves = $\theta$. &
+        Init. with leaves = $\emptyset$. &
         Store as (leaf, weight) pairs. \\
         \\
         $\text{traverse}(node, w)$. &
@@ -544,17 +519,17 @@
 
     \newpage
 
-    \noindent For the modified information gain calculations, we can suppose at node contruction with dataset $D$, let $D_{\text{complete}} \subset D$ be exmaples with known attribute $A$. 
+    \noindent For the modified information gain calculations, we can suppose at node contruction with dataset $D$, let $D_{\text{complete}} \subset D$ be examples with known attribute $A$. 
     \begin{answercols}
-        Let $D_{\text{miss}} = D \ D_{\text{complete}}$. &
-        All exmaples missing $A$. \\
+        Let $D_{\text{miss}} = D \backslash D_{\text{complete}}$. &
+        All examples missing $A$. \\
         \\
-        Compute $( P_A(v) = \frac{	D_{\text{complete}}^v	}{	D_{\text{complete}}	} )$. &
+        Compute $( P_A(v) = \frac{	|D_{\text{complete}}^v|	}{	D_{\text{complete}}	} )$. &
         All value frequencies from the complete data. \\
         \\
         For each $x \in D_{\text{miss}}$ \\
         For each $v \in \text{Values}(A)$. &
-        To handle missing exmaples, and then to split up into all values. \\
+        To handle missing examples, and then to split up into all values. \\
         \\
         Create a fractional example $(x, y)$ with weight $w = P_{A}(v)$. &
         Weight by frequency. \\
@@ -615,11 +590,20 @@
         Return node
     \end{answercols}
 
-    \noindent In total, this series of algorithm should handle missing values consistently in both classification and traning. This is because: 
+    \noindent In total, this series of algorithm should handle missing values consistently in both classification and training. This is because: 
     \begin{itemize}
         \item The probablistic splits are based off of value frequencies during classififcation.
-        \item The algorithm employs fractional exmaples based on value distributions during traning.
+        \item The algorithm employs fractional examples based on value distributions during training.
         \item And weight propagation is maintained throughout both phases
     \end{itemize}
-    Thus leading to no thrown away data.
+    Thus leading to no thrown away data.\\
+    \\
+    \textit{Some questions for my answer:}
+    \begin{itemize}
+        \item How I've written out my algorithm kinda feels messy since it's within my 2-column format. Please do let me know if you want me to actually write out the algorithm and then explain it, or if my explanation was sufficent.
+        \item Should I also prove how the weight propagation actually preserves probability (like such that the sum of weights = 1)
+        \item Is my IG function right? I dunno since I had to also consider the impurity reduction.
+        \item Did my explantion sufficently show how this is better than just single imputation?
+        \item If there're any issues with the tree construction part of my answer, please let me know.
+    \end{itemize}
 \end{document}

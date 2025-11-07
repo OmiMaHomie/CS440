@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.19)  3 NOV 2025 17:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.9.19)  7 NOV 2025 13:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1133,30 +1133,30 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 185.
+Package xcolor Warning: Incompatible color definition on input line 191.
 
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 189--190
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 191--195
+[2{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+Underfull \hbox (badness 10000) in paragraph at lines 195--196
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 191--195
+Underfull \hbox (badness 10000) in paragraph at lines 197--201
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 191--195
+Underfull \hbox (badness 10000) in paragraph at lines 197--201
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 202--205
+Underfull \hbox (badness 10000) in paragraph at lines 197--201
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 203--206
 
  []
 
@@ -1169,24 +1169,24 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 214.
+Package xcolor Warning: Incompatible color definition on input line 215.
 
 [3]
-Overfull \hbox (37.43127pt too wide) detected at line 270
+Overfull \hbox (31.95634pt too wide) detected at line 255
 \OML/cmm/m/it/10.95 E\OT1/cmr/m/n/10.95 (\OML/cmm/m/it/10.95 K; ^^O\OT1/cmr/m/n
-/10.95 ) = [] [] \OML/cmm/m/it/10.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/1
-0.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1/cmr/m/n/10.95 )[] + [] [] \OML/cmm/m/it/10
-.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10.95 ^^@ \OML/cmm/m/it/10.95 ^^O\
-OT1/cmr/m/n/10.95 )[]
+/10.95 ) = [] []\OML/cmm/m/it/10.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10
+.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1/cmr/m/n/10.95 )[] + [][]\OML/cmm/m/it/10.95
+ ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1
+/cmr/m/n/10.95 )[]
  []
 
 
-Overfull \hbox (85.84845pt too wide) detected at line 284
+Overfull \hbox (80.37352pt too wide) detected at line 263
 \OML/cmm/m/it/10.95 E\OT1/cmr/m/n/10.95 (\OML/cmm/m/it/10.95 K; ^^O\OT1/cmr/m/n
-/10.95 ) = [] [] \OML/cmm/m/it/10.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/1
-0.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1/cmr/m/n/10.95 )[] + [] [] \OML/cmm/m/it/10
-.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10.95 ^^@ \OML/cmm/m/it/10.95 ^^O\
-OT1/cmr/m/n/10.95 )[]
+/10.95 ) = [] []\OML/cmm/m/it/10.95 ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10
+.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1/cmr/m/n/10.95 )[] + [][]\OML/cmm/m/it/10.95
+ ^^O[]\OT1/cmr/m/n/10.95 (1 \OMS/cmsy/m/n/10.95 ^^@ \OML/cmm/m/it/10.95 ^^O\OT1
+/cmr/m/n/10.95 )[]
  []
 
 
@@ -1198,15 +1198,15 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 288.
+Package xcolor Warning: Incompatible color definition on input line 267.
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 290--292
+Underfull \hbox (badness 10000) in paragraph at lines 269--271
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 290--292
+Underfull \hbox (badness 10000) in paragraph at lines 269--271
 
  []
 
@@ -1219,15 +1219,15 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 318.
+Package xcolor Warning: Incompatible color definition on input line 287.
 
 [5]
-Underfull \hbox (badness 10000) in paragraph at lines 328--332
+Underfull \hbox (badness 10000) in paragraph at lines 297--301
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 328--332
+Underfull \hbox (badness 10000) in paragraph at lines 297--301
 
  []
 
@@ -1240,7 +1240,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 357.
+Package xcolor Warning: Incompatible color definition on input line 326.
 
 [6]
 
@@ -1252,15 +1252,15 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 407.
+Package xcolor Warning: Incompatible color definition on input line 382.
 
 [7]
-Underfull \hbox (badness 10000) in paragraph at lines 416--417
+Underfull \hbox (badness 10000) in paragraph at lines 391--392
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 418--422
+Underfull \hbox (badness 10000) in paragraph at lines 393--397
 
  []
 
@@ -1273,9 +1273,9 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 444.
+Package xcolor Warning: Incompatible color definition on input line 419.
 
-[8{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+[8]
 
 Package fancyhdr Warning: \headheight is too small (12.0pt): 
 (fancyhdr)                Make it at least 13.59999pt, for example:
@@ -1285,20 +1285,20 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 482.
+Package xcolor Warning: Incompatible color definition on input line 457.
 
 [9]
-Underfull \hbox (badness 10000) in paragraph at lines 492--498
+Underfull \hbox (badness 10000) in paragraph at lines 467--473
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 492--498
+Underfull \hbox (badness 10000) in paragraph at lines 467--473
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 518--518
+Underfull \hbox (badness 10000) in paragraph at lines 493--493
 []|\OT1/cmr/m/n/10.95 If the node is a leaf, then
  []
 
@@ -1311,7 +1311,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 543.
+Package xcolor Warning: Incompatible color definition on input line 518.
 
 [10]
 
@@ -1323,10 +1323,10 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 545.
+Package xcolor Warning: Incompatible color definition on input line 520.
 
 [11]
-Underfull \hbox (badness 10000) in paragraph at lines 565--565
+Underfull \hbox (badness 10000) in paragraph at lines 540--540
 []|\OT1/cmr/m/n/10.95 Original en-tropy is $\OML/cmm/m/it/10.95 H\OT1/cmr/m/n/1
 0.95 (\OML/cmm/m/it/10.95 D\OT1/cmr/m/n/10.95 ) =
  []
@@ -1340,9 +1340,13 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 584.
+Package xcolor Warning: Incompatible color definition on input line 559.
 
 [12]
+Underfull \hbox (badness 10000) in paragraph at lines 599--603
+
+ []
+
 
 Package caption Warning: Unused \captionsetup[lstlisting] on input line 34.
 See the caption package documentation for explanation.
@@ -1356,7 +1360,7 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-1.59999pt}.
 
 
-Package xcolor Warning: Incompatible color definition on input line 625.
+Package xcolor Warning: Incompatible color definition on input line 609.
 
 [13] 
 enddocument/afterlastpage: lastpage setting LastPage.
@@ -1369,11 +1373,11 @@ Package rerunfilecheck Info: File `wa3_solutions.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 27390 strings out of 476182
- 498691 string characters out of 5795595
+ 27392 strings out of 476182
+ 498671 string characters out of 5795595
  1940975 words of memory out of 5000000
  48924 multiletter control sequences out of 15000+600000
- 564618 words of font info for 60 fonts, out of 8000000 for 9000
+ 565239 words of font info for 62 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  90i,14n,93p,967b,581s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
@@ -1392,7 +1396,7 @@ m/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
 hare/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/sh
 are/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/sha
 re/texmf/fonts/type1/public/cm-super/sfrm1095.pfb>
-Output written on wa3_solutions.pdf (13 pages, 220143 bytes).
+Output written on wa3_solutions.pdf (13 pages, 224917 bytes).
 PDF statistics:
  180 PDF objects out of 1000 (max. 8388607)
  129 compressed objects within 2 object streams
