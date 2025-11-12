@@ -24,6 +24,9 @@ import java.util.Random;
 public class NaiveBayes
     extends Object
 {
+    //
+    // FIELDS
+    //
 
     private final List<Pair<FeatureType, Integer> >    featureHeader;    // array of (FEATURE_TYPE, NUM_FEATURE_VALUES)
 
@@ -35,6 +38,10 @@ public class NaiveBayes
     private Map<Integer, List<Double>> continuousMeans; // the mean for continuous features per class
     private Map<Integer, List<Double>> continuousStdDevs; // std dev for continuous features per class
     private double smoothingAlpha = 1.0; // smooting val (laplace)
+
+    //
+    // CONSTRUCTOR(S)
+    //
 
     public NaiveBayes(List<Pair<FeatureType, Integer> > featureHeader)
     {
@@ -48,13 +55,37 @@ public class NaiveBayes
         this.continuousStdDevs = new HashMap<>();
     }
 
+    //
+    // GET/SET
+    //
+
     public List<Pair<FeatureType, Integer> > getFeatureHeader() { return this.featureHeader; }
     // TODO: if you add fields they probably should get getters and setters!
+
+    //
+    // METHODS
+    //
 
     // TODO: complete me!
     public void fit(Matrix X, Matrix y_gt)
     {
-        ;
+        // Count classes, calc the priors
+        int totalExamples = X.getShape().getFirst(); // # of rows
+        Map<Integer, Integer> classCounts = new HashMap<>();
+        
+        // Count the # of occurances of each class
+        for (int i = 0; i < totalExamples; i++) {
+            int classLabel = (int) y_gt.get(i, 0);
+            classCounts.put(classLabel, classCounts.getOrDefault(classLabel, 0) + 1);
+        }
+        
+        // Calc prob. of each prior
+        for (Map.Entry<Integer, Integer> entry : classCounts.entrySet()) {
+            classPriors.put(entry.getKey(), (double) entry.getValue() / totalExamples);
+        }
+        
+        // System.out.println("Class counts: " + classCounts);
+        // System.out.println("Class priors: " + classPriors);
     }
 
     // TODO: complete me!
