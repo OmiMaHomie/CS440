@@ -35,6 +35,8 @@ public class ClassificationAgent
     {
         super(playerNum, args);
 
+        // System.out.println("ClassificationAgent constructor called with playerNum: " + playerNum);
+
         List<Pair<FeatureType, Integer> > featureHeader = new ArrayList<>(4);
         featureHeader.add(new Pair<>(FeatureType.CONTINUOUS, -1));
         featureHeader.add(new Pair<>(FeatureType.CONTINUOUS, -1));
@@ -42,6 +44,10 @@ public class ClassificationAgent
         featureHeader.add(new Pair<>(FeatureType.DISCRETE, 4));
 
         this.model = new NaiveBayes(featureHeader);
+
+        // System.out.println("ClassificationAgent initialized successfully");
+
+
     }
 
     public NaiveBayes getModel() { return this.model; }
@@ -49,14 +55,18 @@ public class ClassificationAgent
     @Override
     public void train(Matrix X, Matrix y_gt)
     {
-        System.out.println(X.getShape() + " " + y_gt.getShape());
+        // System.out.println("TRAIN called - X shape: " + X.getShape() + " y_gt shape: " + y_gt.getShape());
         this.getModel().fit(X, y_gt);
+        // System.out.println("Training completed");
     }
 
     @Override
     public int predict(Matrix featureRowVector)
     {
-        return this.getModel().predict(featureRowVector);
+        //System.out.println("PREDICT called");
+        int result = this.getModel().predict(featureRowVector);
+        //.out.println("Prediction result: " + result);
+        return result;
     }
 
 }

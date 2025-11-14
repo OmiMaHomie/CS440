@@ -37,7 +37,7 @@ public class NaiveBayes
     private Map<Integer, List<Map<Integer, Double>>> discreteProbabilities; // P(feature_value | class) for the discrete features
     private Map<Integer, List<Double>> continuousMeans; // the mean for continuous features per class
     private Map<Integer, List<Double>> continuousStdDevs; // std dev for continuous features per class
-    private double smoothingAlpha = 1.0; // smooting val (laplace)
+    private double smoothingAlpha = 0.5; // smooting val (laplace)
 
     //
     // CONSTRUCTOR(S)
@@ -69,33 +69,56 @@ public class NaiveBayes
     // Essentially is training the Naive Bayes model on the data.
     public void fit(Matrix X, Matrix y_gt)
     {
+        if (X == null || y_gt == null) {
+            System.err.println("fit() received null matrices");
+            return;
+        }
+
         // Count classes, calc the priors
-        int totalExamples = X.getShape().getFirst(); // # of rows
+        int totalExamples = X.getShape().getNumRows(); // # of rows
         Map<Integer, Integer> classCounts = new HashMap<>();
         
-        // Count the # of occurances of each class
+        // Count the # of occurrences of each class
         for (int i = 0; i < totalExamples; i++) {
             int classLabel = (int) y_gt.get(i, 0);
             classCounts.put(classLabel, classCounts.getOrDefault(classLabel, 0) + 1);
         }
-        
+
+        // System.out.println("Class distribution: " + classCounts);
+
         // Calc prob. of each prior
         for (Map.Entry<Integer, Integer> entry : classCounts.entrySet()) {
             classPriors.put(entry.getKey(), (double) entry.getValue() / totalExamples);
         }
-        
+
         // System.out.println("Class counts: " + classCounts);
         // System.out.println("Class priors: " + classPriors);
 
         // Process each feature
         int numFeatures = featureHeader.size();
         
+        // Log feature info
+        // System.out.println("Number of features: " + numFeatures);
+        // for (int i = 0; i < numFeatures; i++) {
+        //     Pair<FeatureType, Integer> feature = featureHeader.get(i);
+        //     System.out.println("Feature " + i + ": " + feature.getFirst() + " with " + feature.getSecond() + " values");
+        // }   
+    
+        // init the data structure w/ correct size
         for (int classLabel : classCounts.keySet()) {
-            discreteProbabilities.put(classLabel, new ArrayList<>());
-            continuousMeans.put(classLabel, new ArrayList<>());
-            continuousStdDevs.put(classLabel, new ArrayList<>());
+            discreteProbabilities.put(classLabel, new ArrayList<>(numFeatures));
+            continuousMeans.put(classLabel, new ArrayList<>(numFeatures));
+            continuousStdDevs.put(classLabel, new ArrayList<>(numFeatures));
+            
+            // init with null/zeros
+            for (int i = 0; i < numFeatures; i++) {
+                discreteProbabilities.get(classLabel).add(null);
+                continuousMeans.get(classLabel).add(0.0);
+                continuousStdDevs.get(classLabel).add(0.0);
+            }
         }
         
+        // Process each feature
         for (int featureIdx = 0; featureIdx < numFeatures; featureIdx++) {
             Pair<FeatureType, Integer> featureInfo = featureHeader.get(featureIdx);
             FeatureType type = featureInfo.getFirst();
@@ -106,11 +129,22 @@ public class NaiveBayes
                 processContinuousFeature(X, y_gt, featureIdx);
             }
         }
+        
+        // Check what we stored
+        // System.out.println("FINAL MODEL STATE");
+        // for (int classLabel : classCounts.keySet()) {
+        //     System.out.println("Class " + classLabel + ":");
+        //     System.out.println("Discrete features: " + discreteProbabilities.get(classLabel).size());
+        //     System.out.println("Continuous means: " + continuousMeans.get(classLabel).size());
+        //     System.out.println("Continuous stddevs: " + continuousStdDevs.get(classLabel).size());
+        // }
     }
 
     // Calc a discrete feature. Calc. conditional probabilities for each feature value given for each class (smooting for unseen feature vals).
     private void processDiscreteFeature(Matrix X, Matrix y_gt, int featureIdx, int numValues) {
-        int totalExamples = X.getShape().getFirst();
+       int totalExamples = X.getShape().getNumRows();
+    
+        // System.out.println("Processing discrete feature " + featureIdx + " with " + numValues + " possible values");
         
         for (int classLabel : classPriors.keySet()) {
             // Count the # of time we see each feature value for this class
@@ -125,6 +159,9 @@ public class NaiveBayes
                 }
             }
             
+            // System.out.println("Class " + classLabel + " has " + classTotal + " examples for feature " + featureIdx);
+            // System.out.println("Value counts: " + valueCounts);
+            
             // Calc the probabilities
             Map<Integer, Double> probabilities = new HashMap<>();
             for (int value = 0; value < numValues; value++) {
@@ -134,13 +171,14 @@ public class NaiveBayes
                 probabilities.put(value, probability);
             }
             
-            discreteProbabilities.get(classLabel).add(probabilities);
+            // System.out.println("Probabilities for feature " + featureIdx + " class " + classLabel + ": " + probabilities);
+            discreteProbabilities.get(classLabel).set(featureIdx, probabilities);
         }
     }
 
     // Processes a continuous feature by calculating mean, std dev, for gaussian dis. for each class.
     private void processContinuousFeature(Matrix X, Matrix y_gt, int featureIdx) {
-        int totalExamples = X.getShape().getFirst();
+        int totalExamples = X.getShape().getNumRows();
         
         for (int classLabel : classPriors.keySet()) {
             // Get all feature vals for this class
@@ -163,8 +201,8 @@ public class NaiveBayes
             
             if (stdDev == 0) stdDev = 1e-6; // Make sure not to divide by 0
             
-            continuousMeans.get(classLabel).add(mean);
-            continuousStdDevs.get(classLabel).add(stdDev);
+            continuousMeans.get(classLabel).set(featureIdx, mean);
+            continuousStdDevs.get(classLabel).set(featureIdx, stdDev);
         }
     }
 
@@ -177,6 +215,16 @@ public class NaiveBayes
     // Predicts the class label for a single feature vector from the data produced from fit()
     public int predict(Matrix x)
     {
+        // if (x == null) {
+        //     System.err.println("predict() received null matrix");
+        //     return 0;
+        // }
+        // if (classPriors.isEmpty()) {
+        //     System.err.println("Model not trained yet, returning default (human)");
+        //     return 0;
+        // }
+        // System.out.println("Predicting for feature vector...");
+
         // Use log probabilities to avoid underflow
         Map<Integer, Double> logProbabilities = new HashMap<>();
         
@@ -195,22 +243,35 @@ public class NaiveBayes
                 
                 if (featureInfo.getFirst() == FeatureType.DISCRETE) {
                     int discreteValue = (int) featureValue;
-                    Map<Integer, Double> probs = discreteProbabilities.get(classLabel).get(featureIdx);
-                    featureProb = probs.getOrDefault(discreteValue, 1e-6); // small probability if unseen value
-                } else { // CONTINUOUS
-                    double mean = continuousMeans.get(classLabel).get(featureIdx);
-                    double stdDev = continuousStdDevs.get(classLabel).get(featureIdx);
-                    featureProb = gaussianPDF(featureValue, mean, stdDev);
+                    
+                    if (!discreteProbabilities.containsKey(classLabel) || 
+                        discreteProbabilities.get(classLabel).size() <= featureIdx ||
+                        discreteProbabilities.get(classLabel).get(featureIdx) == null) {
+                        // System.err.println("Missing discrete probabilities for class " + classLabel + " feature " + featureIdx);
+                        featureProb = 1e-6; // small default probability
+                    } else {
+                        Map<Integer, Double> probs = discreteProbabilities.get(classLabel).get(featureIdx);
+                        featureProb = probs.getOrDefault(discreteValue, 1e-6);
+                    }
+                } else { // continuous
+                    if (!continuousMeans.containsKey(classLabel) || 
+                        continuousMeans.get(classLabel).size() <= featureIdx) {
+                        // System.err.println("Missing continuous parameters for class " + classLabel + " feature " + featureIdx);
+                        featureProb = 1e-6; // small default probability
+                    } else {
+                        double mean = continuousMeans.get(classLabel).get(featureIdx);
+                        double stdDev = continuousStdDevs.get(classLabel).get(featureIdx);
+                        featureProb = gaussianPDF(featureValue, mean, stdDev);
+                    }
                 }
                 
                 // Add log probability
                 logProbabilities.put(classLabel, logProbabilities.get(classLabel) + Math.log(featureProb));
             }
         }
-        
+
         // Return class with highest probability
         return logProbabilities.get(1) > logProbabilities.get(0) ? 1 : 0;
     }
 
 }
-

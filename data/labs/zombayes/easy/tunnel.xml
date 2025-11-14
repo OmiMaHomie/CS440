@@ -42,4 +42,3 @@
 		<Parameter Name="environment.model.class" Value="edu.cwru.sepia.environment.model.BestEffortModel" />
 	</Runner>
 </Configuration>
-
