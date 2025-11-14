@@ -66,7 +66,7 @@ public class NaiveBayes
     // METHODS
     //
 
-    // TODO: complete me!
+    // Essentially is training the Naive Bayes model on the data.
     public void fit(Matrix X, Matrix y_gt)
     {
         // Count classes, calc the priors
@@ -108,7 +108,7 @@ public class NaiveBayes
         }
     }
 
-    // For discrete features, we need to calculate its own properties/probablities
+    // Calc a discrete feature. Calc. conditional probabilities for each feature value given for each class (smooting for unseen feature vals).
     private void processDiscreteFeature(Matrix X, Matrix y_gt, int featureIdx, int numValues) {
         int totalExamples = X.getShape().getFirst();
         
@@ -138,7 +138,7 @@ public class NaiveBayes
         }
     }
 
-    // For continuous features, we can calculate its properties/probabilties with gaussian distribution
+    // Processes a continuous feature by calculating mean, std dev, for gaussian dis. for each class.
     private void processContinuousFeature(Matrix X, Matrix y_gt, int featureIdx) {
         int totalExamples = X.getShape().getFirst();
         
@@ -168,16 +168,48 @@ public class NaiveBayes
         }
     }
 
-    // Helper method to allow for continuous feature probability calc.
+    // Helper method to calc. the probability density function for a gaussian dis. Essentially, within the naive bayes model, calc. the P(feature_value | class).
     private double gaussianPDF(double x, double mean, double stdDev) {
         double exponent = Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)));
         return (1.0 / (stdDev * Math.sqrt(2 * Math.PI))) * exponent;
     }
 
-    // TODO: complete me!
+    // Predicts the class label for a single feature vector from the data produced from fit()
     public int predict(Matrix x)
     {
-        return -1;
+        // Use log probabilities to avoid underflow
+        Map<Integer, Double> logProbabilities = new HashMap<>();
+        
+        // Init w/ log of prior probabilities
+        for (int classLabel : classPriors.keySet()) {
+            logProbabilities.put(classLabel, Math.log(classPriors.get(classLabel)));
+        }
+        
+        // Add log probabilities for each feature
+        for (int featureIdx = 0; featureIdx < featureHeader.size(); featureIdx++) {
+            Pair<FeatureType, Integer> featureInfo = featureHeader.get(featureIdx);
+            double featureValue = x.get(0, featureIdx); // x --> row vec
+            
+            for (int classLabel : classPriors.keySet()) {
+                double featureProb;
+                
+                if (featureInfo.getFirst() == FeatureType.DISCRETE) {
+                    int discreteValue = (int) featureValue;
+                    Map<Integer, Double> probs = discreteProbabilities.get(classLabel).get(featureIdx);
+                    featureProb = probs.getOrDefault(discreteValue, 1e-6); // small probability if unseen value
+                } else { // CONTINUOUS
+                    double mean = continuousMeans.get(classLabel).get(featureIdx);
+                    double stdDev = continuousStdDevs.get(classLabel).get(featureIdx);
+                    featureProb = gaussianPDF(featureValue, mean, stdDev);
+                }
+                
+                // Add log probability
+                logProbabilities.put(classLabel, logProbabilities.get(classLabel) + Math.log(featureProb));
+            }
+        }
+        
+        // Return class with highest probability
+        return logProbabilities.get(1) > logProbabilities.get(0) ? 1 : 0;
     }
 
 }
