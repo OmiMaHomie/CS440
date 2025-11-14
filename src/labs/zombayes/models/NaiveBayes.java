@@ -37,7 +37,7 @@ public class NaiveBayes
     private Map<Integer, List<Map<Integer, Double>>> discreteProbabilities; // P(feature_value | class) for the discrete features
     private Map<Integer, List<Double>> continuousMeans; // the mean for continuous features per class
     private Map<Integer, List<Double>> continuousStdDevs; // std dev for continuous features per class
-    private double smoothingAlpha = 0.1; // smooting val (laplace)
+    private double smoothingAlpha = 0.1; // smoothing val (laplace)
 
     //
     // CONSTRUCTOR(S)
@@ -270,8 +270,11 @@ public class NaiveBayes
             }
         }
 
-        // Return class with highest probability
-        return logProbabilities.get(1) > logProbabilities.get(0) ? 1 : 0;
+        // Return class with highest probability, w/ padding to classifiying humans (make it easier to classify humans)
+        // get(1) --> HUMAN PROB
+        // get(0) --> ZOMBIE PROB
+        double humanBias = 0.0;
+        return (logProbabilities.get(1) + humanBias) > logProbabilities.get(0) ? 1 : 0;
     }
 
 }
