@@ -37,7 +37,7 @@ public class NaiveBayes
     private Map<Integer, List<Map<Integer, Double>>> discreteProbabilities; // P(feature_value | class) for the discrete features
     private Map<Integer, List<Double>> continuousMeans; // the mean for continuous features per class
     private Map<Integer, List<Double>> continuousStdDevs; // std dev for continuous features per class
-    private double smoothingAlpha = 0.5; // smooting val (laplace)
+    private double smoothingAlpha = 0.1; // smooting val (laplace)
 
     //
     // CONSTRUCTOR(S)
