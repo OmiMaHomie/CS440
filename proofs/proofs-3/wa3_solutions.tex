@@ -121,28 +121,28 @@
 
     \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
     \\
-    Let $D$ be the dataset with $n$ positive examples $(+1)$ and $n$ negative examples $(-1)$ such that $|D| = 2n$. \\
-    The question tells us that a leave-one-out cross-validation is performed, such essentially does the following: \\
-    \\
-    - For each fold, remove 1 example $e$ \\
-    - Train a majority classifier on the remaining $2n - 1$ examples \\
-    - Predict the class of $e$ \\
-    \\
-    The majority classifier predicts the class with more examples in the training set; Since the total amount of classes in this validation is $2n - 1$, ties are impossible since the dataset is odd. \\
-    \\
-    \begin{answercols} 
-        Let $P = \{+1\} \times n, N = \{-1\} \times n$.  &
-        Defining the dataset, with $n$ positives, negatives. \\
-        \\
-        LOOCV trains on $D \setminus e$ such that $|D \setminus e| = 2n - 1$. &
-        Defining the LOOCV procedure.
-    \end{answercols}
+    Assume the following variables:
+    \begin{itemize}
+        \item Let $P = \{x \in D \mid \text{label}(x) = +1\}$, $|P| = n$
+        \item Let $N = \{x \in D \mid \text{label}(x) = -1\}$, $|N| = n$
+        \item $D = P \cup N$, $P \cap N = \emptyset$
+    \end{itemize}
+    $D$ is essentially the dataset with $n$ positive examples $(+1)$ and $n$ negative examples $(-1)$ such that $|D| = 2n$. \\
+    The LOOCV process intuitively does the following: 
+    \begin{itemize}
+        \item For each fold, remove 1 example $e$
+        \item Train a majority classifier on the remaining $2n - 1$ examples
+        \item Predict the class of $e$
+    \end{itemize}
+
+    \noindent The majority classifier predicts the class with more examples in the training set \\
+    \textbf{Note:} Since the total amount of classes in this validation is $2n - 1$, ties are impossible since the dataset is odd. \\
 
     \newpage
 
     \noindent\textbf{Case 1: $e \in P$} (The left-out example is positive)
     \begin{answercols}
-        Training set: $(n - 1)$ positives, $n$ negatives. &
+        Training set: $|P \setminus \{e\}| = n - 1$, $|N| = n$ &
         1 positive class is now removed. \\
         \\
         $n > n - 1 \rightarrow$ majority class = negatives. &
@@ -157,7 +157,7 @@
 
     \noindent\textbf{Case 2: $e \in N$} (The left-out example is negative) 
     \begin{answercols}
-        Training set: $(n - 1)$ negatives, $n$ positives. &
+        Training set: $|P| = n$, $|N \setminus \{e\}| = n - 1$ &
         1 negative class is now removed. \\
         \\
         $n > n - 1 \rightarrow$ majority class = positive. &
@@ -181,12 +181,6 @@
         No correct predictions.
     \end{answercols}
 
-    \textit{Questions for this question:}
-    \begin{itemize}
-        \item Should I explicitly prove that $n > n-1$ guarantees no ties, or is this obvious enough for the proof?
-        \item To be honest, while I was able to get to this conclusion, I find this conclusion to be kinda paradoxical? Why wouldn't to be a ~50\% accuracy? Is it just that this specific case somehow breaks the algorithm?
-    \end{itemize}
-
     
     \newpage
 
@@ -205,11 +199,14 @@
     The predicted class will be the one receiving more than half of the votes (majority voting). \\
 
     \begin{answercols}
-        $X \sim \text{Bin}(K, \epsilon)$. &
-        number of wrong classifiers is binomial. \\
-        \\
-        Ensemble wrong if majority classifiers wrong. &
-        Defining the majority voting error.
+        Let $X_i = \mathbb{1}\{\text{classifier } i \text{ is wrong}\}$ & 
+        Define indicator variables. \\\\
+        $X_i \sim \text{Bernoulli}(\epsilon)$ for $i = 1, \ldots, K$ & 
+        Each classifier has error $\epsilon$. \\\\
+        $X = \sum_{i=1}^K X_i$ & 
+        Total wrong classifiers. \\\\
+        $X \sim \text{Binomial}(K, \epsilon)$ & 
+        Sum of i.d. Bernoulli variables.  
     \end{answercols}
 
     \newpage
@@ -244,8 +241,8 @@
         Majority means $> t$ wrong. &
         Strict majority is required. \\
         \\
-        If $X = t$, then tie $\rightarrow$ random guess. &
-        Tie-breaking assumption. \\
+        If $X = t$, then tie $\rightarrow$ random guess (error with prob. 1/2). & 
+        Standard tie-breaking assumption. \\
         \\
         Error if $X > t$ or $(X = t \text{ and guess is wrong})$. &
         There're 2 error-producing scenarios. \\
@@ -276,13 +273,7 @@
         \end{cases}
     \end{equation*}
 
-    \noindent This should account for independent classifier errors and the majority voting mechanism.
-
-    \textit{Questions for this question:}
-    \begin{itemize}
-        \item Should I further clarify the rate at which ensemble error decreases with K, or is deriving the exact formula sufficient?
-    \end{itemize}
-
+    \noindent This should account for independent classifier errors and the majority voting mechanism. Also note that $\epsilon < 0.5$, $E(K, \epsilon) \to 0$ as $K \to \infty$; Basically the ensemble improves with more classifiers.
 
     \newpage
 
@@ -330,8 +321,8 @@
         Given a network of hidden layers, $L$, of depth $k$, $\exists W, b$ such that $y = Wx + b$. &
         This is a claim we're making, will be \textbf{proven via induction.} \\
         \\
-        Base case: $L = 0$, $y = Wx + b$. &
-        Answered trivially, there are no hidden layers. \\
+        Base case: $L = 1$ hidden layer &
+        Previously proven as $y = W'\mathbf{x} + b'$ from the previous question (single linear transform) \\
         \\
         Inductive step: Assume true for $L = k$ layers. & 
         The inductive hypothesis. \\
@@ -372,14 +363,9 @@
 
     \noindent Therefore, this proves how a neural network with only linear activation functions, regardless of depth, is equivalent to a single-layer linear model. This THUS means that AT LEAST 1 nonlinear activation function is necessary for learning nonlinear relationships.
 
-    \textit{Questions for this question:}
-    \begin{itemize}
-        \item For the induction proof in the second part, should I be more explicit about the dimensionality of the weight matrices and how they compose? I showed the linear composition but I dunno if I should then prove how the resulting matrix has the correct dimensions.
-        \item The last part of my answer shows how at least one nonlinear unit is necessary for nonlinear relationships. Is how I explained it sufficent?
-        \item For the arbitary layers case, should I specify that all layers have the same constant $c$, or would the result hold even if each layer had a different linear constant $c_{i}$?
-    \end{itemize}
 
     \newpage
+    
 
     \question{Question 4: Datasets with Weights (25 points)}
     Consider a dataset in which each data point $\Big(x^{(i)}, y_{gt}^{(i)}\Big)$ is associated with some weight $r^{(i)} > 0$. If we want to use a mean squared error for our loss function (like we want to do in temporal difference learning), our objective now becomes:
@@ -428,23 +414,24 @@
         $\nabla_{\theta}L(\theta) = \frac{1}{2n}[-2\Phi^{T} Ry + 2\Phi^{T} R\Phi\theta]$. &
         Performing gradient calculation. \\
         \\
-        Set up $\nabla_{\theta}L(\theta) = 0$. &
-        This is the first-order condition. \\
+        Set $\nabla_{\theta}L(\theta) = 0$ to find critical points. & 
+        This is the 1st-order condition, it is necessary for the optimum.        \\
         \\
-        $-\Phi^{T} Ry + \Phi^{T} R\Phi\theta = 0$. &
-        Simlify by dropping $\frac{1}{N}$. \\
+        $-\Phi^{T} Ry + \Phi^{T} R\Phi\theta = 0$ & 
+        Multiply both sides by $N$ to eliminate $\frac{1}{N}$.\\
         \\
         $\Phi^{T} R\Phi\theta = \Phi^{T} Ry$. &
         Normal equations. \\
         \\
-        Assume that $\Phi^{T} R\Phi$ is invertible. &
-        This is the full-rank condition. \\
-        \\
+        Since $R \succ 0$ and $\Phi$ has full column rank, & Positive weights and linearly independent features. \\\\
+        $\Phi^{T} R\Phi$ is invertible. & This is the full-rank condition; Guarantees a unique solution.        \\\\
         $\theta^{*} = (\Phi^{T} R\Phi)^{-1}\Phi^{T} Ry$. &
         This is the optimal solution. \\
         \\
-        Hessian $\nabla_{\theta}^{2}L(\theta) = \frac{1}{N}\Phi^{T}R\Phi \succ 0$. &
-        Basically saying that the positive definitive is the minimum.
+        Hessian: $\nabla_{\theta}^{2}L(\theta) = \frac{1}{N}\Phi^{T}R\Phi$ & Second derivative test. \\\\
+        Since $R$ is diagonal with $r^{(i)} > 0$, and $\Phi$ full rank, & All weights positive, design matrix full rank. \\\\
+        $\Phi^{T}R\Phi \succ 0$ (positive definite) & Quadratic form is positive definite. \\\\
+        $\therefore$ Critical point is a global minimum. & Convex optimization guarantee.    
     \end{answercols}
 
     \noindent In conclusion, the optimal parameter for the weighted linear regression is the following:
