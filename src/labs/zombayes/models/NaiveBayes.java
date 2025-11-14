@@ -86,6 +86,92 @@ public class NaiveBayes
         
         // System.out.println("Class counts: " + classCounts);
         // System.out.println("Class priors: " + classPriors);
+
+        // Process each feature
+        int numFeatures = featureHeader.size();
+        
+        for (int classLabel : classCounts.keySet()) {
+            discreteProbabilities.put(classLabel, new ArrayList<>());
+            continuousMeans.put(classLabel, new ArrayList<>());
+            continuousStdDevs.put(classLabel, new ArrayList<>());
+        }
+        
+        for (int featureIdx = 0; featureIdx < numFeatures; featureIdx++) {
+            Pair<FeatureType, Integer> featureInfo = featureHeader.get(featureIdx);
+            FeatureType type = featureInfo.getFirst();
+            
+            if (type == FeatureType.DISCRETE) {
+                processDiscreteFeature(X, y_gt, featureIdx, featureInfo.getSecond());
+            } else if (type == FeatureType.CONTINUOUS) {
+                processContinuousFeature(X, y_gt, featureIdx);
+            }
+        }
+    }
+
+    // For discrete features, we need to calculate its own properties/probablities
+    private void processDiscreteFeature(Matrix X, Matrix y_gt, int featureIdx, int numValues) {
+        int totalExamples = X.getShape().getFirst();
+        
+        for (int classLabel : classPriors.keySet()) {
+            // Count the # of time we see each feature value for this class
+            Map<Integer, Integer> valueCounts = new HashMap<>();
+            int classTotal = 0;
+            
+            for (int i = 0; i < totalExamples; i++) {
+                if ((int) y_gt.get(i, 0) == classLabel) {
+                    int featureValue = (int) X.get(i, featureIdx);
+                    valueCounts.put(featureValue, valueCounts.getOrDefault(featureValue, 0) + 1);
+                    classTotal++;
+                }
+            }
+            
+            // Calc the probabilities
+            Map<Integer, Double> probabilities = new HashMap<>();
+            for (int value = 0; value < numValues; value++) {
+                int count = valueCounts.getOrDefault(value, 0);
+                // (count + alpha) / (classTotal + alpha * numValues)
+                double probability = (count + smoothingAlpha) / (classTotal + smoothingAlpha * numValues);
+                probabilities.put(value, probability);
+            }
+            
+            discreteProbabilities.get(classLabel).add(probabilities);
+        }
+    }
+
+    // For continuous features, we can calculate its properties/probabilties with gaussian distribution
+    private void processContinuousFeature(Matrix X, Matrix y_gt, int featureIdx) {
+        int totalExamples = X.getShape().getFirst();
+        
+        for (int classLabel : classPriors.keySet()) {
+            // Get all feature vals for this class
+            List<Double> values = new ArrayList<>();
+            
+            for (int i = 0; i < totalExamples; i++) {
+                if ((int) y_gt.get(i, 0) == classLabel) {
+                    values.add(X.get(i, featureIdx));
+                }
+            }
+            
+            // mean
+            double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            
+            // standard deviation
+            double variance = values.stream()
+                .mapToDouble(v -> Math.pow(v - mean, 2))
+                .average().orElse(0.0);
+            double stdDev = Math.sqrt(variance);
+            
+            if (stdDev == 0) stdDev = 1e-6; // Make sure not to divide by 0
+            
+            continuousMeans.get(classLabel).add(mean);
+            continuousStdDevs.get(classLabel).add(stdDev);
+        }
+    }
+
+    // Helper method to allow for continuous feature probability calc.
+    private double gaussianPDF(double x, double mean, double stdDev) {
+        double exponent = Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)));
+        return (1.0 / (stdDev * Math.sqrt(2 * Math.PI))) * exponent;
     }
 
     // TODO: complete me!
