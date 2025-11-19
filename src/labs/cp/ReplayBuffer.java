@@ -16,7 +16,9 @@ import edu.bu.cp.utils.Pair;
 public class ReplayBuffer
     extends Object
 {
-
+    //
+    // FIELDS
+    //
     public static enum ReplacementType
     {
         RANDOM,
@@ -34,6 +36,9 @@ public class ReplayBuffer
 
     private Random              rng;
 
+    // 
+    // CONSTRUCTOR(S)
+    //
     public ReplayBuffer(ReplacementType type,
                         int numSamples,
                         int dim,
@@ -52,6 +57,9 @@ public class ReplayBuffer
 
     }
 
+    //
+    // GET/SET
+    //
     public int size() { return this.size; }
     public final ReplacementType getReplacementType() { return this.type; }
     private int getNewestSampleIdx() { return this.newestSampleIdx; }
@@ -64,6 +72,10 @@ public class ReplayBuffer
 
     private void setSize(int i) { this.size = i; }
     private void setNewestSampleIdx(int i) { this.newestSampleIdx = i; }
+
+    //
+    // METHODS
+    //
 
     private int chooseSampleToEvict()
     {
@@ -86,34 +98,71 @@ public class ReplayBuffer
         return idxToEvict;
     }
 
+    // This method should add a new transition (prevState, reward, nextState) to the replayBuffer
+    // However, we cannot just add this transition right away, we first have to check that there is space!
+    //
+    // A replay buffer can be configured to act like a circular buffer (i.e. overwrite the OLDEST transitions
+    // first when we run out of space) OR it can be configured to overwrite RANDOM transitions.
+    // This value is already provided for you when the ReplayBuffer object is created,
+    // and can be accessed with the this.getReplacementType() method.
+
+    // your method should work for both types of replacement!
+
+    // After we determine the row index to insert this new transition into
+    // there are several fields that need to be updated.
+    //      - We want to put the prevState in the Matrix returned by this.getPrevStates()
+    //      - We want to put the reward in the Matrix returned by this.getRewards()
+    //      - We want to put nextState in the Matrix returned by this.getNextStates() but ONLY if it isnt Null!
+    //          Since we need to store terminal transitions (i.e. transitions that end the game)
+    //          its possible for nextState to be null. If it is, we don't want to add it
+    //      - We want to update the array returned by this.getIsStateTerminalMask() with whether nextState
+    //          is null or not. Put a true value if nextState is null, and false otherwise
+    //      - We want to update any indexing information that we would need to keep the replacementType going
+    //          - if there is space left, we need to increment this.getSize()
+    //          - if there isn't space left and we have OLDEST replacement, we need to increment this.getNewestSampleIdx
     public void addSample(Matrix prevState,
                           double reward,
                           Matrix nextState)
     {
-        // TODO: complete me!
-
-        // This method should add a new transition (prevState, reward, nextState) to the replayBuffer
-        // However, we cannot just add this transition right away, we first have to check that there is space!
-        //
-        // A replay buffer can be configured to act like a circular buffer (i.e. overwrite the OLDEST transitions
-        // first when we run out of space) OR it can be configured to overwrite RANDOM transitions.
-        // This value is already provided for you when the ReplayBuffer object is created,
-        // and can be accessed with the this.getReplacementType() method.
-
-        // your method should work for both types of replacement!
-
-        // After we determine the row index to insert this new transition into
-        // there are several fields that need to be updated.
-        //      - We want to put the prevState in the Matrix returned by this.getPrevStates()
-        //      - We want to put the reward in the Matrix returned by this.getRewards()
-        //      - We want to put nextState in the Matrix returned by this.getNextStates() but ONLY if it isnt Null!
-        //          Since we need to store terminal transitions (i.e. transitions that end the game)
-        //          its possible for nextState to be null. If it is, we don't want to add it
-        //      - We want to update the array returned by this.getIsStateTerminalMask() with whether nextState
-        //          is null or not. Put a true value if nextState is null, and false otherwise
-        //      - We want to update any indexing information that we would need to keep the replacementType going
-        //          - if there is space left, we need to increment this.getSize()
-        //          - if there isn't space left and we have OLDEST replacement, we need to increment this.getNewestSampleIdx
+        int idxToInsert;
+        
+        // Check if buffer has space
+        if (this.size() < this.getPrevStates().getShape().getNumRows()) {
+            // --> SPACE AVAILABLE, use next valid index
+            idxToInsert = this.size();
+            this.setSize(this.size() + 1);
+        } else {
+            // --> SPACE FULL, time to landlord (eviction time)
+            idxToInsert = this.chooseSampleToEvict();
+            
+            // For the OLDEST replace, update the newest sample index
+            if (this.getReplacementType() == ReplacementType.OLDEST) {
+                this.setNewestSampleIdx((this.getNewestSampleIdx() + 1) % this.getPrevStates().getShape().getNumRows());
+            }
+        }
+        
+        try {
+            // Update prevStates, rewards, nextStates, and terminal mask.
+            this.getPrevStates().copySlice(idxToInsert, idxToInsert + 1, 0, this.getPrevStates().getShape().getNumCols(), prevState);
+            
+            this.getRewards().set(idxToInsert, 0, reward);
+            
+            if (nextState != null) {
+                this.getNextStates().copySlice(idxToInsert, idxToInsert + 1, 0, this.getNextStates().getShape().getNumCols(), nextState);
+                this.getIsStateTerminalMask()[idxToInsert] = false;
+            } else {
+                // For terminal states, nextState is null
+                this.getIsStateTerminalMask()[idxToInsert] = true;
+            }
+            
+            // Update the newest sample index so we can track it later
+            this.setNewestSampleIdx(idxToInsert);
+            
+        } catch (Exception e) {
+            System.err.println("ReplayBuffer.addSample had some error");
+            e.printStackTrace();
+            System.exit(-1);
+        }
     }
 
     public static double max(Matrix qValues) throws IndexOutOfBoundsException
@@ -133,34 +182,55 @@ public class ReplayBuffer
     }
 
 
+    // This method should calculate the bellman update for temporal difference learning so that
+    // we can use it as ground truth for updating our neural network
+    //
+    // Remember, the bellman ground truth we want for a Q function looks like this:
+    //      R(s) + \gamma * max_{a'} Q(s', a')
+
+    // Since the number of actions is fixed in the CartPole (cp) world, we don't need to include
+    // action information directly in the input vector to the q function. Instead, we'll make the neural
+    // network always produce (in this case since there are 2 actions) 2 q values: one per action.
+    // So whenever we need to max_{a'} Q(s', a'), we're literally going to feed s' into our network,
+    // which will produce two scores, one for a_1' and one for a_2'. We can choose max_{a'} Q(s', a')
+    // by choosing whichever value is largest!
+
+    // Now note that this bellman update reduces to just R(s) whenever we're processing a terminal transition
+    // (so s' doesn't exist).
+
+    // This method should calculate a column vector. The number of rows in this column vector is equal to the
+    // number of transitions currently stored in the ReplayBuffer. Each row corresponds to a transition
+    // which could either be (s, r, s') or (s, r, null), so when calculating the bellman update for that row,
+    // you need to check the mask to see which version you're calculating! 
     public Matrix getGroundTruth(Model qFunction,
                                  double discountFactor)
     {
-        // TODO: complete me!
-
-        // This method should calculate the bellman update for temporal difference learning so that
-        // we can use it as ground truth for updating our neural network
-        //
-        // Remember, the bellman ground truth we want for a Q function looks like this:
-        //      R(s) + \gamma * max_{a'} Q(s', a')
-
-        // Since the number of actions is fixed in the CartPole (cp) world, we don't need to include
-        // action information directly in the input vector to the q function. Instead, we'll make the neural
-        // network always produce (in this case since there are 2 actions) 2 q values: one per action.
-        // So whenever we need to max_{a'} Q(s', a'), we're literally going to feed s' into our network,
-        // which will produce two scores, one for a_1' and one for a_2'. We can choose max_{a'} Q(s', a')
-        // by choosing whichever value is largest!
-
-        // Now note that this bellman update reduces to just R(s) whenever we're processing a terminal transition
-        // (so s' doesn't exist).
-
-        // This method should calculate a column vector. The number of rows in this column vector is equal to the
-        // number of transitions currently stored in the ReplayBuffer. Each row corresponds to a transition
-        // which could either be (s, r, s') or (s, r, null), so when calculating the bellman update for that row,
-        // you need to check the mask to see which version you're calculating! 
-
-
-        return null;
+        Matrix groundTruth = Matrix.zeros(this.size(), 1);
+        
+        try {
+            for  (int i = 0; i < this.size(); i++) {
+                double bellmanUpdate;
+                
+                if (this.getIsStateTerminalMask()[i]) {
+                    // The terminal state --> Q(s,a) = R(s)
+                    bellmanUpdate = this.getRewards().get(i, 0);
+                } else {
+                    // Non-terminal state --> Q(s,a) = R(s) + y * max_{a'} Q(s', a')
+                    Matrix nextState = this.getNextStates().getRow(i);
+                    Matrix nextQValues = qFunction.forward(nextState);
+                    double maxNextQ = max(nextQValues);
+                    bellmanUpdate = this.getRewards().get(i, 0) + discountFactor * maxNextQ;
+                }
+                
+                groundTruth.set(i, 0, bellmanUpdate);
+            }
+        } catch (Exception e) {
+            System.err.println("ReplayBuffer.getGroundTruth had some error");
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        
+        return groundTruth;
     }
 
     public Pair<Matrix, Matrix> getTrainingData(Model qFunction,

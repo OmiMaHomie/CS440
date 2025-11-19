@@ -87,7 +87,8 @@ public class Main
         return action;
     }
 
-
+    // play a bunch of training games where you are not allowed to update the neural network
+    // make sure to add transitions that you observe to the replay buffer, including the terminal transition!
     public static void train(Game game,         // world
                              Model qFunction,   // neural network
                              ReplayBuffer rb,   // replay buffer (to populate)
@@ -96,9 +97,45 @@ public class Main
         long numTrainingGames = ns.get("numTrainingGames");
         for(int gameIdx = 0; gameIdx < numTrainingGames; ++gameIdx)
         {
-            // TODO: complete me!
-            // play a bunch of training games where you are not allowed to update the neural network
-            // make sure to add transitions that you observe to the replay buffer, including the terminal transition!
+            // Reset the game to allow for a new episode
+            Matrix state = game.reset();
+            boolean isDone = false;
+            
+            while(!isDone)
+            {
+                // Choose action using epsilon-greedy policy
+                int action;
+                // Use a small epsilon for exploration during training
+                if (Math.random() < 0.1) {
+                    // Explore --> rnd action
+                    action = game.getRandom().nextInt(2); // 0/1 --? left/right
+                } else {
+                    // Exploit --> use the Q-function
+                    try {
+                        Matrix qValues = qFunction.forward(state);
+                        action = argmax(qValues);
+                    } catch(Exception e) {
+                        System.err.println("Main.train, there was an error during use of qFunction");
+                        e.printStackTrace();
+                        action = game.getRandom().nextInt(2); // fallback incase
+                    }
+                }
+                
+                // Take the action, observe the result
+                Triple<Matrix, Double, Boolean> obs = game.step(action);
+                Matrix nextState = obs.getFirst();
+                double reward = obs.getSecond();
+                isDone = obs.getThird();
+                
+                // Add current transition to the replay buffer
+                rb.addSample(state, reward, nextState);
+                
+                // Update state for next iteration
+                state = nextState;
+            }
+            
+            // Theoretically, we'd also need to add terminal transition (state, reward, null) when game ends.
+            // However, the game alr ends by the last step, so not necessary
         }
     }
 
