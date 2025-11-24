@@ -17,6 +17,7 @@ import edu.bu.pas.pokemon.core.enums.Type;
 import edu.bu.pas.pokemon.core.enums.Stat;
 import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
 import edu.bu.pas.pokemon.core.enums.Flag;
+import edu.bu.pas.pokemon.core.enums.Height;
 
 public class CustomSensorArray
     extends SensorArray
@@ -54,9 +55,10 @@ public class CustomSensorArray
     // Gets all vals that MIGHT be used for calculcating util. val, and put into an array.
     public Matrix getSensorValues(final BattleView state, final MoveView action)
     {
-        // We will collect 3 main types of info:
+        // We will collect 4 main types of info:
         // General sensor values (of pokemons, the battlefield, etc.)
         // Individual pokemon stats
+        // Battle-level stats
         // Move stats
 
         List<Double> features = new ArrayList<>();
@@ -69,6 +71,8 @@ public class CustomSensorArray
         addTeamFeatures(features, state.getTeam1View(), true); // Our team
         addTeamFeatures(features, state.getTeam2View(), false); // Their team
 
+        addBattleFeatures(features, state);
+
         // Updates # of features
         setNumFeatures(features.size());
 
@@ -80,12 +84,38 @@ public class CustomSensorArray
     }
 
     private void addPokemonState(List<Double> features, PokemonView pokemon, boolean isOurs) {
+        if (pokemon == null) {
+            // 0 for everything if pokemon is null
+            addNullPokemonFeatures(features);
+            return;
+        }
+
         // HP
         double hpRatio = (double) pokemon.getCurrentStat(Stat.HP) / 
                         pokemon.getInitialStat(Stat.HP);
         features.add(hpRatio);
         
-        // Status conditions
+        // LV (normalize)
+        features.add((double) pokemon.getLevel() / 100.0);
+        
+        // Stage multipliers
+        // Range of [-6, +6] for each stat
+        // Normalized to [-1, 1]
+        features.add((double) pokemon.getStatMultiplier(Stat.ATK) / 6.0);    
+        features.add((double) pokemon.getStatMultiplier(Stat.DEF) / 6.0);
+        features.add((double) pokemon.getStatMultiplier(Stat.SPD) / 6.0);
+        features.add((double) pokemon.getStatMultiplier(Stat.SPATK) / 6.0);
+        features.add((double) pokemon.getStatMultiplier(Stat.SPDEF) / 6.0);
+        features.add((double) pokemon.getStatMultiplier(Stat.ACC) / 6.0);
+        features.add((double) pokemon.getStatMultiplier(Stat.EVASIVE) / 6.0);
+        
+        // Height status
+        Height height = pokemon.getHeight();
+        features.add(height == Height.IN_AIR ? 1.0 : 0.0);        // Flying
+        features.add(height == Height.UNDERGROUND ? 1.0 : 0.0);   // Underground  
+        features.add(height == Height.NONE ? 1.0 : 0.0);          // Normal
+        
+        // Non-volatile statuses
         NonVolatileStatus status = pokemon.getNonVolatileStatus();
         features.add(status == NonVolatileStatus.SLEEP ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.POISON ? 1.0 : 0.0);
@@ -93,6 +123,7 @@ public class CustomSensorArray
         features.add(status == NonVolatileStatus.PARALYSIS ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.FREEZE ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.TOXIC ? 1.0 : 0.0);
+        features.add(status == NonVolatileStatus.NONE ? 1.0 : 0.0);
         
         // Volatile statuses
         features.add(pokemon.getFlag(Flag.CONFUSED) ? 1.0 : 0.0);
@@ -101,15 +132,34 @@ public class CustomSensorArray
         features.add(pokemon.getFlag(Flag.FOCUS_ENERGY) ? 1.0 : 0.0);
         features.add(pokemon.getFlag(Flag.SEEDED) ? 1.0 : 0.0);
         
-        // lv (normalized)
-        features.add((double) pokemon.getLevel() / 100.0);
+        // Pokemon types, one-hot encoded
+        Type type1 = pokemon.getCurrentType1();
+        Type type2 = pokemon.getCurrentType2();
+        for (Type t : Type.values()) {
+            features.add((type1 == t || type2 == t) ? 1.0 : 0.0);
+        }
+        
+        // Active move status
+        features.add(pokemon.getActiveMoveView() != null ? 1.0 : 0.0);
+        
+        // Sub. status
+        features.add(pokemon.getSubstitute() != null ? 1.0 : 0.0);
+        
+        // Unchangeable stats
+        features.add(pokemon.getStatsUnchangeable() ? 1.0 : 0.0);
     }
 
     private void addMoveFeatures(List<Double> features, MoveView action) {
+        if (action == null) {
+            // 0 --> all move features if action is null
+            addNullMoveFeatures(features);
+            return;
+        }
+
         // move prop.
         features.add(action.getPower() != null ? (double) action.getPower() / 200.0 : 0.0);
         features.add(action.getAccuracy() != null ? (double) action.getAccuracy() / 100.0 : 1.0);
-        features.add((double) action.getPP() / 40.0); // Normalized PP
+        features.add((double) action.getPP() / 40.0);
         features.add((double) action.getPriority());
         features.add((double) action.getCriticalHitRatio());
         
@@ -117,16 +167,57 @@ public class CustomSensorArray
         features.add(action.getCategory() == Move.Category.PHYSICAL ? 1.0 : 0.0);
         features.add(action.getCategory() == Move.Category.SPECIAL ? 1.0 : 0.0);
         features.add(action.getCategory() == Move.Category.STATUS ? 1.0 : 0.0);
+        
+        // move types
+        Type moveType = action.getType();
+        for (Type t : Type.values()) {
+            features.add(moveType == t ? 1.0 : 0.0);
+        }
+        
+        // height restrictions
+        features.add(action.getCanHitHeights().contains(Height.IN_AIR) ? 1.0 : 0.0);
+        features.add(action.getCanHitHeights().contains(Height.UNDERGROUND) ? 1.0 : 0.0);
+        features.add(action.getCanHitHeights().contains(Height.NONE) ? 1.0 : 0.0);
+        
+        // type effectiveness
+        PokemonView opponent = state.getTeam2View().getActivePokemonView();
+        if (opponent != null && action.getPower() != null && action.getPower() > 0) {
+            double effectiveness = calculateTypeEffectiveness(action.getType(), 
+                opponent.getCurrentType1(), opponent.getCurrentType2());
+            features.add(effectiveness);
+        } else {
+            features.add(1.0); // Neutral effectiveness
+        }
     }
 
     private void addTeamFeatures(List<Double> features, TeamView team, boolean isOurs) {
-        // # of alive pokemon
+        // Alive count and team health
         int aliveCount = 0;
+        double totalHealth = 0.0;
+        double maxHealth = 0.0;
+        
         for (int i = 0; i < team.size(); i++) {
-            if (!team.getPokemonView(i).hasFainted()) {
+            PokemonView p = team.getPokemonView(i);
+            if (!p.hasFainted()) {
                 aliveCount++;
+                totalHealth += p.getCurrentStat(Stat.HP);
+                maxHealth += p.getInitialStat(Stat.HP);
             }
         }
-        features.add((double) aliveCount / 6.0); // Normalized
+        
+        features.add((double) aliveCount / 6.0); // alive count (normalized)
+        features.add(maxHealth > 0 ? totalHealth / maxHealth : 0.0); // team HP ratio
+        
+        // Team buffs (Light Screen, Reflect)
+        features.add((double) team.getNumLightScreenTurnsRemaining() / 8.0); // Normalized
+        features.add((double) team.getNumReflectTurnsRemaining() / 8.0); // Normalized
+    }
+
+    private void addBattleFeatures(List<Double> features, BattleView state) {
+        // Turn number, not sure how to calculate this yet so just 0 for now
+        features.add(0.0);
+        
+        // state of the battle
+        features.add(state.isOver() ? 1.0 : 0.0);
     }
 }
