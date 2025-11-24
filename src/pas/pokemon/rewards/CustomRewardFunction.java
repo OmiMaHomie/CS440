@@ -174,17 +174,17 @@ public class CustomRewardFunction
                 switch (theirNext.getNonVolatileStatus()) {
                     case SLEEP:
                     case FREEZE:
-                        reward += 8.0; // prevents moves
+                        reward += 10.0; // prevents moves
                         break;
                     case PARALYSIS:
-                        reward += 6.0; // lose turn chance AND SPD reduction
+                        reward += 3.0; // lose turn chance AND SPD reduction
                         break;
                     case TOXIC:
-                        reward += 4.0; // dmg over time (bad)
+                        reward += 8.0; // increasing dmg over time
                         break;
                     case POISON:
                     case BURN:
-                        reward += 3.0; // dmg over time (not as bad)
+                        reward += 5.0; // constant dmg over time
                         break;
                 }
             }
