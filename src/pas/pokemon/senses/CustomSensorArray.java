@@ -66,7 +66,7 @@ public class CustomSensorArray
         addPokemonState(features, state.getTeam1View().getActivePokemonView(), true); // Our pokemon
         addPokemonState(features, state.getTeam2View().getActivePokemonView(), false); // Their pokemon
         
-        addMoveFeatures(features, action);
+        addMoveFeatures(features, state, action);
         
         addTeamFeatures(features, state.getTeam1View(), true); // Our team
         addTeamFeatures(features, state.getTeam2View(), false); // Their team
@@ -98,9 +98,7 @@ public class CustomSensorArray
         // LV (normalize)
         features.add((double) pokemon.getLevel() / 100.0);
         
-        // Stage multipliers
-        // Range of [-6, +6] for each stat
-        // Normalized to [-1, 1]
+        // Stage multipliers (normalized from +/-6)
         features.add((double) pokemon.getStatMultiplier(Stat.ATK) / 6.0);    
         features.add((double) pokemon.getStatMultiplier(Stat.DEF) / 6.0);
         features.add((double) pokemon.getStatMultiplier(Stat.SPD) / 6.0);
@@ -149,9 +147,25 @@ public class CustomSensorArray
         features.add(pokemon.getStatsUnchangeable() ? 1.0 : 0.0);
     }
 
-    private void addMoveFeatures(List<Double> features, MoveView action) {
+    private void addNullPokemonFeatures(List<Double> features) {
+        // Calc. total number of pokemon features and add zeros
+        int numStageMultipliers = 7;
+        int numHeightStatus = 3;
+        int numNonVolatileStatus = 7;
+        int numVolatileStatus = 5;
+        int numTypes = Type.values().length;
+        int numOtherFeatures = 3; // active move, substitute, stats unchangeable
+        int numBasicFeatures = 2; // HP and level
+        
+        int totalFeatures = numBasicFeatures + numStageMultipliers + numHeightStatus + numNonVolatileStatus + numVolatileStatus + numTypes + numOtherFeatures;
+        
+        for (int i = 0; i < totalFeatures; i++) {
+            features.add(0.0);
+        }
+    }
+
+    private void addMoveFeatures(List<Double> features, BattleView state, MoveView action) {
         if (action == null) {
-            // 0 --> all move features if action is null
             addNullMoveFeatures(features);
             return;
         }
@@ -190,6 +204,37 @@ public class CustomSensorArray
         }
     }
 
+    private void addNullMoveFeatures(List<Double> features) {
+        // Calculate total number of move features and add zeros
+        int numBasicProperties = 5;
+        int numCategories = 3;
+        int numTypes = Type.values().length;
+        int numHeightRestrictions = 3;
+        int numEffectiveness = 1;
+        
+        int totalFeatures = numBasicProperties + numCategories + numTypes + 
+                           numHeightRestrictions + numEffectiveness;
+        
+        for (int i = 0; i < totalFeatures; i++) {
+            features.add(0.0);
+        }
+    }
+
+    private double calculateTypeEffectiveness(Type moveType, Type defenderType1, Type defenderType2) {
+        double effectiveness = 1.0;
+        
+        // calc. effectiveness against first type
+        effectiveness *= Type.getEffectivenessModifier(moveType, defenderType1);
+        
+        // calc. effectiveness against second type (if possible)
+        if (defenderType2 != null) {
+            effectiveness *= Type.getEffectivenessModifier(moveType, defenderType2);
+        }
+        
+        return effectiveness;
+    }
+
+
     private void addTeamFeatures(List<Double> features, TeamView team, boolean isOurs) {
         // Alive count and team health
         int aliveCount = 0;
@@ -213,10 +258,7 @@ public class CustomSensorArray
         features.add((double) team.getNumReflectTurnsRemaining() / 8.0); // Normalized
     }
 
-    private void addBattleFeatures(List<Double> features, BattleView state) {
-        // Turn number, not sure how to calculate this yet so just 0 for now
-        features.add(0.0);
-        
+    private void addBattleFeatures(List<Double> features, BattleView state) {       
         // state of the battle
         features.add(state.isOver() ? 1.0 : 0.0);
     }
