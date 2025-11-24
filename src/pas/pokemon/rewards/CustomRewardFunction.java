@@ -93,6 +93,23 @@ public class CustomRewardFunction
         return reward;
     }
 
+    private double evaluateBattleState(final BattleView state) {
+        double score = 0.0;
+        
+        TeamView myTeam = state.getTeam1View();
+        TeamView theirTeam = state.getTeam2View();
+        
+        // team hp difference
+        score += calculateTeamHealthDifferential(myTeam, theirTeam);
+        
+        // # of alive pokemons difference
+        int myAlive = countAlivePokemon(myTeam);
+        int theirAlive = countAlivePokemon(theirTeam);
+        score += (myAlive - theirAlive) * 5.0;
+        
+        return score;
+    }
+
     private double calculateDamageDealtReward(final BattleView state, final BattleView nextState) { }
     
     private double calculateDamageTakenReward(final BattleView state, final BattleView nextState) { }
