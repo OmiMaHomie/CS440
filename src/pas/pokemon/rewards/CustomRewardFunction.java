@@ -110,16 +110,85 @@ public class CustomRewardFunction
         return score;
     }
 
-    private double calculateDamageDealtReward(final BattleView state, final BattleView nextState) { }
+    private double calculateDamageDealtReward(final BattleView state, final BattleView nextState) { 
+        double reward = 0.0;
+        
+        PokemonView myCurrent = state.getTeam1View().getActivePokemonView();
+        PokemonView theirCurrent = state.getTeam2View().getActivePokemonView();
+        PokemonView theirNext = nextState.getTeam2View().getActivePokemonView();
+        
+        if (myCurrent != null && theirCurrent != null && theirNext != null) {
+            int currentTheirHP = theirCurrent.getCurrentStat(Stat.HP);
+            int nextTheirHP = theirNext.getCurrentStat(Stat.HP);
+            int damageDealt = currentTheirHP - nextTheirHP;
+            
+            if (damageDealt > 0) {
+                // Reward proportional to dmg dealt, normalized by max HP
+                double damageRatio = (double) damageDealt / theirCurrent.getInitialStat(Stat.HP);
+                reward += damageRatio * 10.0;
+            }
+        }
+        
+        return reward;
+    }
     
-    private double calculateDamageTakenReward(final BattleView state, final BattleView nextState) { }
+    private double calculateDamageTakenReward(final BattleView state, final BattleView nextState) { 
+        return 0d;
+    }
     
-    private double calculateStatusEffectReward(final BattleView state, final BattleView nextState) { }
+    private double calculateStatusEffectReward(final BattleView state, final BattleView nextState) {
+        return 0d;
+    }
     
-    private double calculateKOReward(final BattleView state, final BattleView nextState) { }
+    private double calculateKOReward(final BattleView state, final BattleView nextState) { 
+        return 0d;
+    }
     
-    private double calculateMoveEffectivenessReward(final BattleView state, final BattleView nextState) { }
+    private double calculateMoveEffectivenessReward(final BattleView state, final MoveView action, final BattleView nextState) { 
+        return 0d;
+    }
     
-    private double calculateStrategicReward(final BattleView state, final BattleView nextState) { }
+    private double calculateStrategicReward(final BattleView state, final BattleView nextState) { 
+        return 0d;
+    }
 
+    // Calc. the difference of health in my team vs their team.
+    private double calculateTeamHealthDifferential(TeamView myTeam, TeamView theirTeam) {
+        double myTotalHealth = 0.0;
+        double myMaxHealth = 0.0;
+        double theirTotalHealth = 0.0;
+        double theirMaxHealth = 0.0;
+        
+        for (int i = 0; i < myTeam.size(); i++) {
+            PokemonView p = myTeam.getPokemonView(i);
+            if (!p.hasFainted()) {
+                myTotalHealth += p.getCurrentStat(Stat.HP);
+                myMaxHealth += p.getInitialStat(Stat.HP);
+            }
+        }
+        
+        for (int i = 0; i < theirTeam.size(); i++) {
+            PokemonView p = theirTeam.getPokemonView(i);
+            if (!p.hasFainted()) {
+                theirTotalHealth += p.getCurrentStat(Stat.HP);
+                theirMaxHealth += p.getInitialStat(Stat.HP);
+            }
+        }
+        
+        double myHealthRatio = (myMaxHealth > 0) ? myTotalHealth / myMaxHealth : 0.0;
+        double theirHealthRatio = (theirMaxHealth > 0) ? theirTotalHealth / theirMaxHealth : 0.0;
+        
+        return (myHealthRatio - theirHealthRatio) * 15.0;
+    }
+
+    // Calc. the # of alive pokemons in a team
+    private int countAlivePokemon(TeamView team) {
+        int count = 0;
+        for (int i = 0; i < team.size(); i++) {
+            if (!team.getPokemonView(i).hasFainted()) {
+                count++;
+            }
+        }
+        return count;
+    }
 }
