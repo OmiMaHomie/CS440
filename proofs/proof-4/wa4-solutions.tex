@@ -1,0 +1,486 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsfonts}
+%\usepackage{geometry}
+\usepackage[paper=a4paper, 
+            left=20.0mm, right=20.0mm, 
+            top=25.0mm, bottom=25.0mm]{geometry}
+\pagestyle{empty}
+\usepackage{graphicx}
+\usepackage{fancyhdr, lastpage, bbding, pmboxdraw}
+\usepackage[usenames,dvipsnames]{color}
+\definecolor{darkblue}{rgb}{0,0,.6}
+\definecolor{darkred}{rgb}{.7,0,0}
+\definecolor{darkgreen}{rgb}{0,.6,0}
+\definecolor{red}{rgb}{.98,0,0}
+\usepackage[colorlinks,pagebackref,pdfusetitle,urlcolor=darkblue,citecolor=darkblue,linkcolor=darkred,bookmarksnumbered,plainpages=false]{hyperref}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\pagestyle{fancyplain}
+\fancyhf{}
+\lhead{ \fancyplain{}{Course Name} }
+%\chead{ \fancyplain{}{} }
+\rhead{ \fancyplain{}{\today} }
+%\rfoot{\fancyplain{}{page \thepage\ of \pageref{LastPage}}}
+\fancyfoot[RO, LE] {Page \thepage\ of \textcolor{black}{\pageref{LastPage}} }
+\thispagestyle{plain}
+
+%%%%%%%%%%%% LISTING %%%
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{subcaption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\usepackage{verbatim} % used to display code
+\usepackage{fancyvrb}
+\usepackage{acronym}
+\usepackage{amsthm, amsmath}
+\usepackage{tikz}
+    \usetikzlibrary{calc, arrows, arrows.meta, positioning}
+\usepackage{amssymb,amsmath,stackengine}
+\stackMath
+\usepackage{ifthen}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+
+\VerbatimFootnotes % Required, otherwise verbatim does not work in footnotes!
+
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.93}
+
+\lstset{
+	%language=bash,                          % Code langugage
+	basicstyle=\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+	keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+	commentstyle=\color{gray},              % Comments font
+	numbers=left,                           % Line nums position
+	numberstyle=\tiny,                      % Line-numbers fonts
+	stepnumber=1,                           % Step between two line-numbers
+	numbersep=5pt,                          % How far are line-numbers from code
+	backgroundcolor=\color{lightlightgray}, % Choose background color
+	frame=none,                             % A frame around the code
+	tabsize=2,                              % Default tab size
+	captionpos=t,                           % Caption-position = bottom
+	breaklines=true,                        % Automatic line breaking?
+	breakatwhitespace=false,                % Automatic breaks only at whitespace?
+	showspaces=false,                       % Dont make spaces visible
+	showtabs=false,                         % Dont make tabls visible
+	columns=flexible,                       % Column format
+	morekeywords={__global__, __device__},  % CUDA specific keywords
+}
+
+\newcommand{\question}[1]{\section*{\normalsize #1}}
+% \newcommand{\mat}[1]{\begin{bmatrix}#1\end{bmatrix}}
+% \newcommand{\extraspace}[]{}
+%     \begin{center}
+%         \textbf{Use this page for extra space.}
+%     \end{center}
+% }
+
+% Custom envs %
+\newenvironment{answercols}
+  {\begin{center}\begin{tabular}{p{0.45\textwidth}p{0.45\textwidth}}
+   \toprule
+   \textbf{Assertion} & \textbf{Explanation} \\
+   \midrule}
+  {\\ \bottomrule\end{tabular}\end{center}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+%\DeclareMathOperator*{\vec}[1]{\textbf{#1}}
+
+\newcommand{\squig}{{\scriptstyle\sim\mkern-3.9mu}}
+\newcommand{\lsquigend}{{\scriptstyle\lhd\mkern-3mu}}
+\newcommand{\rsquigend}{{\scriptstyle\rule{.1ex}{0ex}\rhd}}
+\newcounter{sqindex}
+\newcommand\squigs[1]{%
+  \setcounter{sqindex}{0}%
+  \whiledo {\value{sqindex}< #1}{\addtocounter{sqindex}{1}\squig}%
+}
+\newcommand\rsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\squigs{#2}\rsquigend}{\scriptscriptstyle\text{#1\,}}}%
+}
+\newcommand\lsquigarrow[2]{%
+  \mathbin{\stackon[2pt]{\lsquigend\squigs{#2}}{\scriptscriptstyle\text{\,#1}}}%
+}
+
+\begin{document}
+    \begin{center}
+        {\Large \textbf{WA4 Solutions}}
+    \end{center}
+    \begin{center}
+        Om Khadka, U51801771 \\
+        Collabs: N/A
+    \end{center}
+
+    \question{Question 1: The Precariousness of RL (25 points)}
+    In the last written assignment you considered a loss function where each point was weighted with a nonzero coefficient $r^{(i)}$. You showed that the optimal solution was a function of the weights each sample was given. In this problem you will express an arbitrary supervised learning dataset (which we use in RL) into a dataset where samples are given weights:
+    \begin{enumerate}
+        \item Whenever we have a dataset where each sample is unique (e.g. does not appear more than once), we are creating a dataset where each sample is given a uniform weight. Show that when a dataset contains duplicate points we are creating a dataset where samples are not given uniform weights.
+
+        \item Now relax the weighting terms so that every weight $r^{(i)} \ge 0$ instead of $> 0$. Show that this loss function over a dataset of finite samples can be converted into a weighted sum over all possible data points.
+
+        \item What happens to terms with weights of 0? Do they impact the solution at all? How do we know that the model will perform well on these points?
+    \end{enumerate}
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). There is one exception: you do not have to follow formal proof structure when answering the last part, natural language is fine but I will not accept hand-wavy justification.
+
+    \newpage
+
+    For part \textbf{1}, I'll show that a dataset with duplicate points is implicitly a weighted dataset, where the weights are non-uniform.\\
+    \\
+    Note: This question references my solution to question 4 of \textbf{WA3}.
+
+    \begin{answercols}
+        Consider a dataset $D$ with $M$ unique data points, $\{(x^{(i)}, y^{(i)})\}_{i=1}^{M}$. &
+        Defining the set of all distinct data points. \\
+        \\
+        Let $n_i$ be the frquency of the $i$-th unique point, so the total dataset size is $N = \sigma_{i=1}^{M}n_i$. &
+        A dataset with duplicates can be characterized by the counts $n_i$ of its unique points. \\
+        \\
+        Stanard MSE loss over the full dataset: $L(\theta) = \frac{1}{2N} \sum_{j=1}^{N}(y^{(j)} - f_{\theta}(x^{(j)}))^2$. &
+        The is the real (canonical), unweighted loss, summing over every individual sample. \\
+        \\
+        Regrouping the sum w/ unique points: $L(\theta) = \frac{1}{2N}\sum_{i=1}^{M}n_{i}(y^{(i)}-f_{\theta}(x^{(i)}))^2$. &
+        Instead of summing over all $N$ samples, we instead sum over the $M$ unique points, with each point's error term multiploie by its count $n_i$. \\
+        \\
+        Let $r^{(i)}=n_i$. \\
+        \\
+        $L(\theta) = \frac{1}{2N}\sum_{i=1}^{M}r^{(i)}(y^{(i)}-f_{\theta}(x^{(i)}))^2$. &
+        This is identical to the weighted loss function from questions 4, \textbf{WA3}, with weights $r^{(i)}=n_i$. \\
+        \\
+        If any $n_i \neq n_j$, then the weights $r^{(i)}$ are not uniform. &
+        By definition, if duplicates exists, then at least ONE $n_i > 1$. $\therefore$ The counts $n_i$ (and also the weights $r^{(i)}$) can't all be equal.
+    \end{answercols}
+    
+    \noindent This shows that a dataset with duplicates is equivalent to a weighted dataset, where the weight of a unique point is its frequency of occurrence. Since frequencies are not uniform, the weights are not uniform. \\
+    
+    \newpage
+
+    \noindent For part 2, we relax the condition from $r^{(i)} > 0$ to $r^{(i)} \geq 0$ and show the loss can be written as a sum over all possible points in the input space. 
+
+    \begin{answercols}
+        Let $X$ be the set of all possible input points $x$. &
+        Defining the domain of the model. \\
+        \\
+        For a given dataset $\{(x^{(i)}, y^{(i)})\}^{N}_{i=1}$ and weights $r^{(i)} \geq 0$, the loss is: \\
+        $L(\theta)=\frac{1}{2N}\sum_{i=1}^{N}r^{(i)}(y^{(i)}-f_{\theta}(x^{(i)}))^2$. &
+        This is the given loss function with non-neg weights. \\
+        \\
+        We define a function $p(x, y)$ over $X \times R$ as:
+        $p(x, y) = \sum_{j:(x^{(j)}, y^{(j)}) = (x, y)} r^{(j)}$,
+        and $p(x, y) = 0$ if $(x, y)$ is not in the dataset. &
+        $p(x, y)$ aggregates the total weight assigned to all data points with value $(x, y)$. For a point not in the dataset, its value weight is simply 0. \\
+        \\
+        Original loss can be rewritten:
+        $L(\theta) = \frac{1}{2N} \sum_{(x, y) \in X \times R} p(x, y) \cdot (y-f_{\theta}(x))^2$. &
+        This new sum now iterates over all possible data points $(x, y)$. For any points not in the dataset, $p(x, y) = 0$, so it doesn't contribute to anything. For a point in the dataset, it contributes the sum of its weights $\cdot$ the squared error. \\
+        \\
+        Since the ataset is finite, only finitely many terms in this sume are non-zero. &
+        Ensures the sum is well-defined and compuitationally tractable, even if $X$ ens up being infinite.
+    \end{answercols}
+
+    \noindent $\therefore$ The loss over a finite, weighted dataset is equivalent to a weighted sum over all possible points, where the weight function, $p(x, y)$ is non-zero only on the dataset points.
+
+    \newpage
+
+    \noindent For part 3, when weights are allowed to be zero, the nature of the optimization will change. The consequences and its inherent implications, particularly for Reinforcement, is shown below.
+
+    \begin{answercols}
+        Points with weights $r^{(i)}$ contribute nothing to the loss function. &
+        In $L(\theta) = \frac{1}{2N} \sum_{i=1}^{N} r^{(i)}(y^{(i)} - f_{\theta}(x^{(i)}))^2$, whene $r^{(i)} = 0$, the entire term for that data point is zero, regardless of the model's error. \\
+        \\
+        They have no direct influence on the optimal solution $\theta^{*}$. &
+        In the normal equation $\Phi^{T}R\Phi\theta = \Phi^{T}Ry$, rows corresponding to zero weights are multiplied by 0 in the diagnoal matrix $R$, effectively removing them from solving for $\theta^{*}$. \\
+        \\
+        The moel provides no guarantees about performace on 0-weight points. &
+        The optimization process is uncertain to these points. The solution is determined entirely by points with $r^{(i)} > 0$. Performance on 0-weight points epends on inductive bias and correlation with trained points. \\
+        \\
+        In RL, this then produces an issue: \textbf{states with 0 weight are unexplored, and their value estimates are untrained and are potentially arbitrary}. &
+        If a policy never visits a state-action pair, it recieves 0 weight in the value function update. The estimate value for that state is not grounded in experience and could be inaccurate.
+    \end{answercols}
+
+    \noindent Basically, a zero weight acts as a flag for the model to just ignore that particular data point during training. I guess you could say that this is the precariousness of this hypothetical. There is an absolute distinction in this framework between what is trained on (points with $r^{(i)} > 0$) and what is not (points with $r^{(i)} = 0$). The model's performance on the latter is not a matter of bad generalization, but of no generalization constraint at all. This basically results in critical failure, as the value function for unvisited states remains at its potentially random initial initialization, causing poorly informed policies that realistically will never learn to explore effectively. The model's performance on these point, thus, is not just unverified, but moreso literally unconstrained by the learning objective.
+
+
+    \newpage
+
+
+    \question{Question 2: Reward Function Flavors (25 points)}
+    In lecture, we talked about MDPs that are formulated with a reward function $R(s)$ (i.e. the reward only depends on the current state). However, sometimes MDPs are formulated with a reward function $R(s,a)$ (i.e. a reward function that depends on the action taken), or even $R(s,a,s')$ (i.e. a reward function that depends on the action taken and the way the action is resolved). In this problem, you will show that even though someone may choose one flavor of reward function over another, they are actually identical:
+    \begin{enumerate}
+        \item Write the bellman equation that uses $R(s,a)$ and write the bellman equation that uses $R(s,a,s')$
+        \item Show how an MDP with reward function $R(s,a,s')$ can be converted into a different MDP with reward $R(s,a)$ such that optimal policies in the new MDP correspond exactly to optimal policies in the original MDP.
+        \item Show how an MDP with reward function $R(s,a)$ can be convered into a different MDP with reward $R(s)$ such that optimal policies in the new MDP correspond exactly to optimal policies in the original MDP.
+    \end{enumerate}
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
+    \\
+    \noindent I will show the equivalence between MDPs formulated with different reward function flavors by constructing transformations that preserve optimal policies. \\
+    \\
+    \noindent Firstly, I will show the Bellman equations (\textbf{part 1}): 
+    \begin{itemize}
+        \item \begin{equation*}
+            V^{*}(s) = \max_{a \in A} [R(s, a) + \gamma \sum\limits_{s' \in S} T(s' | s, a) V^{*}(s')]
+        \end{equation*}
+        Rewards function $R(s, a)$: This equation states that the optimal value of a state is the maximum over actions of the immediate reward plus the discounted expected future value.
+        \item \begin{equation*}
+            V{*}(s) = \max_{a \in A} [ \sum\limits_{s' \in S} T(s' | s, a)(R(s, a, s') + \gamma V^{*}(s'))]
+        \end{equation*}
+        Reward function $R(s, a, s')$: On this one, the expectation over next states is taken inside the immediate reward term since the reward depends on the transition outcome.
+    \end{itemize}
+
+    \newpage
+
+    \noindent I will now transform an MDP $M = (S, A, T, R_{sas'}, \gamma)$ with reward $R(s, a, s')$ into a new MDP $M' = (S, A, T, R_{sa}, \gamma)$ with reward $R(s, a)$ (\textbf{part 2}). 
+
+    \begin{answercols}
+        Let $M = (S, A, T, R_{sas'}, \gamma)$ be the original MDP. &
+        Defintion, by given. \\
+        \\
+        Define a new MDP $M' = (S, A, T, R_{sa}, \gamma)$ with $R_{sa}(s, a) = \sum\limits_{s' \in S} T(s' | s, a)R_{sas'}(s,a,s')$. &
+        Compute the expected immediate reward for taking action $a$ in state $s$. \\
+        \\
+        In $M' : V'^{*}(s) = $
+        $\max_{a} [R_{sa}(s, a) + \gamma \sum_{s'} T(s' | s, a) V'^{*} (s')]$. &
+        Standard Bellman equation for $R(s, a)$. \\
+        \\
+        $V'^{*}(s) = \max_{a} [ \sum_{s'} T(s' | s, a)R_{sas'}(s, a, s') + \gamma \sum_{s'} T(s' | s, a) V'^{*} (s')]$. &
+        Substibution of $R_{sa}$, by definition. \\
+        \\
+        $V'^{*}(s) = \max_{a} \sum_{s'} T(s' | s, a) [R_{sas'}(s, a, s') + \gamma V'^{*}(s')]$. &
+        Factor the expectation over $s'$. \\
+        \\
+        This matches the Bellman equation for the original MDP $M$. &
+        In comparison to the 2nd equation from part 1. \\
+        \\
+        Since the Bellman equations are identical, $V'^{*} = V^{*}$ an optimal policies are preserved. &
+        Both MDPs have the same optimal value function.
+    \end{answercols}
+
+    \noindent $\therefore$ The transformed MDP $M'$ with $R(s, a)$ has identical optimal policies to the original MDP with $R(s, a, s')$.
+
+    \newpage
+
+    \noindent Now I will transform an MDP $M = (S, A, T, R_{sa}, \gamma)$ into a new MDP $M' = (S', A, T', R_{s}, \gamma)$ with reward $R(s)$ (\textbf{part 3}).
+
+    \begin{answercols}
+        Let $M = (S, A, T, R_{sa}, \gamma)$ be the original MDP. &
+        Given \\
+        \\
+        Define $S' = S \times A$. New states are $(s, a)$ pairs. &
+        We encoe the action choice into the state. \\
+        \\
+        Keep the same action space $A$. &
+        Actions remain meaningful in the new state representation. \\
+        \\
+        Define
+        \begin{equation*}
+            T'((s', a') | (s, a), a'') = \begin{cases}
+                T(s' | s, a) & \text{if } a'' = a' \\
+                0 & \text{otherwise} 
+            \end{cases}
+        \end{equation*} &
+        The transition first goes to $(s', a')$ deterministically based on chosen action $a'$. \\
+        \\
+        Define $R_{s}(s, a) = R_{sa}(s, a)$. &
+        The Reward depends only on the current "state" $(s, a)$ in $M'$. \\
+        \\
+        Any policy $\pi'$ in $M'$ correspons to $\pi$ in $M$ via $\pi(a | s) = \pi'(a \ (s, a_{\text{prev}}))$. &
+        Policies in $M'$ make the same decision as in $M$. \\
+        \\
+        The value functions satisfy $V'^{*}((s, a)) = Q^{*}(s, a)$ from original MDP. &
+        The new state $(s, a)$ directly represents the Q-val. \\
+        \\
+        Optimal policies in $M'$ correspond exactly to the optimal policies in $M$. &
+        The optimal Q-vals are preserv through the transformation.
+    \end{answercols}
+
+    \noindent $\therefore$ The transformed MDP $M'$ with $R(s)$ has identical optimal policies to the original MDP with $R(s, a)$. \\
+    \\
+    \noindent This proves how all 3 reward functions flavors $(R(s, a, s'), R(s, a), R(s))$ are equivalent in terms of their ability to represent the same set of decision problems with preserved optimal policies.
+
+
+    \newpage
+
+
+    \question{Question 3: Sum of Discounted Rewards vs. Max Reward (25 points)}
+    In lecture we defined the utility of a trajectory to be some additive combination of the rewards along that trajectory. So far this has taken two forms: additive rewards and discounted rewards. However, what happens if we define the utility of a trajectory as the maximum reward observed in that trajectory? Show that this utility function does not result in stationary preferences between trajectories (i.e. that such an agent may change its preference for the optimal trajectory as a function of time). Is it still possible to define autility function on trajectories such that a policy which maximizes the expected trajectory utility results in optimal behavior?\newline
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance).
+
+    \newpage 
+
+    \noindent We can first show that the maximum reward utility leads to non-stationary preferences.
+
+    \begin{answercols}
+        Let $U(\tau) = \max_{t} r_{t}$ be the utility of trajectory $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$. &
+        Given utility function based on maximum reward. \\
+        \\
+        Consider 2 trajectories starting at time $t = 0$: 
+        \begin{itemize}
+            \item $\tau_{A}$ is rewards $= [0, 0, 5]$
+            \item $\tau_{B}$ are rewards $= [4, 0, 0]$
+        \end{itemize} &
+        An exmaple with different reward distributions. \\
+        \\
+        $U(\tau_{A}) = 5, U(\tau_{B}) = 4, \therefore$ Agents prefers $\tau_{A}$ over $\tau_{B}$ on time 0. &
+        By the definition of max utility. \\
+        \\
+        At $t = 1$, remaining trajectories are:
+        \begin{itemize}
+            \item $\tau'_{A}$'s reward $= [0, 5]$
+            \item $\tau'_{B}$'s reward $= [0, 0]$
+        \end{itemize} &
+        Examining the next step. \\
+        \\
+        $U(\tau'_{A}) = 5, U(\tau'_{B}) = 0, \therefore$ Agent prefers $\tau'_{A}$ over $\tau'_{B}$ at time 1. &
+        Still consistent. \\
+        \\
+        Now we consider the following: 
+        \begin{itemize}
+            \item $\tau_{E}$'s rewards $= [0, 3]$
+            \item $\tau_{F}$'s rewars $= [2, 0]$
+        \end{itemize} &
+        Show an another exmaple. \\
+        \\
+        $U(\tau_{E}) = 3, U(\tau_{F}) = 2$, Prefers $\tau_{E}$. &
+        On $t = 0$. \\
+        \\
+        Suppose at $t = 0$, the agent must choose path leaing to either $\tau_{E}$ or $\tau_{F}$. &
+        The desicion point in question. \\
+        \\
+        If the agent takes the path to $\tau_{E}$, after getting $r = 0$, remaining utility is 3. \\
+        If the agent takes the path to $\tau_{F}$, after recieving $r = 2$, remaining utility is 0. &
+        The agent's assessment would change mid-trajectory. \\
+        \\
+        At $t = 0$, moel with prefer the path to $\tau_{E}$, but after recieving $r = 2$, it would then prefer to have taken $\tau_{F}$ &
+        At $t = 0$, $\max = 3 > \max = 2$, but then at $t = 1$, as it is now 2 vs. 0. This is the point of preference reversal, as the agent would regret its first choice.
+    \end{answercols}
+
+    \noindent $\therefore$ The maximum reward utility function leas to non-stationary preferences because of agent's assessment of trajectory value changing as the rewards are being observe and removed for future consideration. 
+
+    \newpage
+
+    \noindent Now to prove if we can define the optimal behavior with maxmim reward utility.
+
+    \begin{answercols}
+        Firstly, Bellman's principle of optimality would fail, as optimal policy from any state depends on rewards already observed. &
+        Is is a DP issue, due to the non-stationary preferences shown from the previous proof. \\
+        \\
+        We can define an augmented state space $s' = (s, m)$ where $m$ tracks maximum rewards seen so far. &
+        Do state space expansion, making the problem Markovian again. \\
+        \\
+        A policy that maximizes the probability of achieve the highest possible rewars can be defined. &
+        Defining a Vlaue Function, as this is a well-defined optimization problem. \\
+        \\
+        $V(s, m) = \max_{a} \sum_{s'} T(s' | s, a) 1_{r \geq m} + V(s', \max(m, r))$. &
+        It is complex, but matematically it works out as a Bellman equation. \\
+        \\
+        It is possible to define utility as indicator $U(\tau) = 1_{\text{max reward in } \tau \geq \text{threshold}}$ and maximize the expected utility. &
+        Because of this possibility, we could yield a coherent objective. \\
+        \\
+        However, this requires knowing the maximum achievable reward in advance OR solving a complex multi-objective problem. &
+        The optimization becomes much harder than a standard MDP.
+    \end{answercols}
+
+    \noindent $\therefore$ While it is \textit{theoretically} possible to define optimal behavior for a maximum reward utility, the reuslting optimization problem would lose the recursive structure of standard MDPs and thusly becomes computationally challenging.
+
+
+    \newpage
+
+
+    \question{Question 4: Proof that the Bellman Equation is a Contraction Function (25 points)}
+    In lecture we claimed that the bellman equation is a contraction function. Specifically, we said that, for any two vectors of utilities $\vec{u}$ and $\vec{u}'$:
+    $$||B(\vec{u}) - B(\vec{u}')||_{\infty} \le \gamma||\vec{u} - \vec{u}'||_{\infty}$$
+    \begin{enumerate}
+        \item Show that, for any functions $f$ and $g$:
+    $$|\max\limits_{a} f(a) - \max\limits_{a} g(a)| \le \max\limits_{a} |f(a) - g(a)|$$
+        \item Derive an expression for $\Big|\Big(B(\vec{u}) - B(\vec{u}')\Big)(s)\Big|$ and then apply the result from part 1 to complete the proof that the bellman equation is a contraction function.
+    \end{enumerate}
+
+    \noindent\textbf{Note:} this is a \textbf{proof} question, meaning you must follow formal proof structure (see the examples of piazza for guidance). \\
+    \\
+    We first go on to proof the assertion shown in part 1. 
+
+    \begin{answercols}
+        Let $a_f \in \arg\max_a f(a)$ &
+        Definition: $f(a_f) = \max_a f(a)$ \\
+        Let $a_g \in \arg\max_a g(a)$ &
+        Definition: $g(a_g) = \max_a g(a)$ \\
+        $f(a_f) \ge f(a_g)$ &
+        $a_f$ maximizes $f$ \\
+        $g(a_g) \ge g(a_f)$ &
+        $a_g$ maximizes $g$ \\
+        \\
+        \textbf{Case 1:} $f(a_f) \ge g(a_g)$ &
+        We now consider 2 seperate cases: One where $\max_a f(a) \ge \max_a g(a)$ and one where $\max_a g(a) \ge \max_a f(a)$. This case looks at the former.\\
+        $\max_a f(a) - \max_a g(a) = f(a_f) - g(a_g)$ &
+        By definition \\
+        $f(a_f) - g(a_g) \le f(a_f) - g(a_f)$ &
+        Since $g(a_g) \ge g(a_f)$ \\
+        $f(a_f) - g(a_f) \le |f(a_f) - g(a_f)|$ &
+        Property of absolute value \\
+        $\le \max_a |f(a) - g(a)|$ &
+        Definition of max \\
+        \\
+        \textbf{Case 2:} $g(a_g) \ge f(a_f)$ &
+        Now we look at the symmetric case, where $\max_a g(a) \ge \max_a f(a)$ \\
+        $\max_a g(a) - \max_a f(a) = g(a_g) - f(a_f)$ &
+        By definition \\
+        $g(a_g) - f(a_f) \le g(a_g) - f(a_g)$ &
+        Since $f(a_f) \ge f(a_g)$ \\
+        $g(a_g) - f(a_g) \le |g(a_g) - f(a_g)|$ &
+        Property of absolute value \\
+        $\le \max_a |f(a) - g(a)|$ &
+        Definition of max \\
+        $|\max_a f(a) - \max_a g(a)| \le \max_a |f(a) - g(a)|$ &
+        Combining both cases
+    \end{answercols}
+
+    \newpage 
+
+    Now, let $\overrightarrow{u}, \overrightarrow{u}$ be any 2 utility vectors.
+
+    \begin{answercols}
+        $B(\vec{u})(s) = \max_a \left[ R(s,a) + \gamma \sum_{s'} T(s' \mid s,a) u(s') \right]$ &
+        Defining the Bellman update \\\\
+        $B(\vec{u}')(s) = \max_a \left[ R(s,a) + \gamma \sum_{s'} T(s' \mid s,a) u'(s') \right]$ &
+        Is the same for $\vec{u}'$ \\\\
+        Let $f_s(a) = R(s,a) + \gamma \sum_{s'} T(s' \mid s,a) u(s')$ &
+        A shorthand \\\\
+        Let $g_s(a) = R(s,a) + \gamma \sum_{s'} T(s' \mid s,a) u'(s')$ &
+        Another shorthand \\\\
+        $|B(\vec{u})(s) - B(\vec{u}')(s)| = |\max_a f_s(a) - \max_a g_s(a)|$ &
+        Substiution the expression of $B(\vec{u})(s)$ and $B(\vec{u}')(s)$ with the shorthand functions. \\\\
+        $\le \max_a |f_s(a) - g_s(a)|$ &
+        First part of the lemma \\\\
+        $f_s(a) - g_s(a) = \gamma \sum_{s'} T(s' \mid s,a) [u(s') - u'(s')]$ &
+        Subtract, and $R(s,a)$ cancels out \\\\
+        $|f_s(a) - g_s(a)| = \gamma \left| \sum_{s'} T(s' \mid s,a) [u(s') - u'(s')] \right|$ &
+        Factor out $\gamma > 0$ \\\\
+        $\le \gamma \sum_{s'} T(s' \mid s,a) |u(s') - u'(s')|$ &
+        Is the triangle inequality, $T \ge 0$ \\\\
+        $\le \gamma \sum_{s'} T(s' \mid s,a) \max_{s''} |u(s'') - u'(s'')|$ &
+        $|u(s') - u'(s')| \le \|u - u'\|_\infty$ \\\\
+        $= \gamma \|\vec{u} - \vec{u}'\|_\infty \sum_{s'} T(s' \mid s,a)$ &
+        Pulling out constant w.r.t. $s'$ \\\\
+        $\sum_{s'} T(s' \mid s,a) = 1$ &
+        Transition probabilities add up to 1 \\\\
+        $|f_s(a) - g_s(a)| \le \gamma \|\vec{u} - \vec{u}'\|_\infty$ &
+        Subbing the entire bound of $\gamma \sum_{s'} T(s' \mid s,a) |\vec{u} - \vec{u}'|_\infty$ with a more simplified bound of $\gamma |\vec{u} - \vec{u}'|_\infty$. Works since transition probabilities sum to 1. \\\\
+        $\max_a |f_s(a) - g_s(a)| \le \gamma \|\vec{u} - \vec{u}'\|_\infty$ &
+        Max over $a$ of the constant bound \\\\
+        $|B(\vec{u})(s) - B(\vec{u}')(s)| \le \gamma \|\vec{u} - \vec{u}'\|_\infty$ &
+        Transitivity from the earlier steps \\\\
+        This holds for all $s$ &
+        $s$ was arbitrary \\\\
+        $\|B(\vec{u}) - B(\vec{u}')\|_\infty \le \gamma \|\vec{u} - \vec{u}'\|_\infty$ &
+        Is the definition of $\|\cdot\|_\infty$ as max over $s$
+    \end{answercols}
+
+    \noindent $\therefore$ The Bellman operatore $B$ is a contraction with modulus $\gamma$ in the $\infty$-norm.
+\end{document}
