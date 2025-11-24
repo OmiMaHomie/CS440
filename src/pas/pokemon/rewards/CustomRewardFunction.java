@@ -1,6 +1,7 @@
 package src.pas.pokemon.rewards;
 
 // SYSTEM IMPORTS
+import java.util.List;
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pokemon.agents.rewards.RewardFunction;
@@ -9,7 +10,9 @@ import edu.bu.pas.pokemon.core.Battle.BattleView;
 import edu.bu.pas.pokemon.core.Move.MoveView;
 import edu.bu.pas.pokemon.core.Pokemon.PokemonView;
 import edu.bu.pas.pokemon.core.Team.TeamView;
-
+import edu.bu.pas.pokemon.core.enums.Stat;
+import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
+import edu.bu.pas.pokemon.core.enums.Flag;
 
 public class CustomRewardFunction
     extends RewardFunction
