@@ -1,8 +1,6 @@
 package src.pas.pokemon.rewards;
 
-
 // SYSTEM IMPORTS
-
 
 // JAVA PROJECT IMPORTS
 import edu.bu.pas.pokemon.agents.rewards.RewardFunction;

@@ -14,6 +14,9 @@ import edu.bu.pas.pokemon.core.Pokemon.PokemonView;
 import edu.bu.pas.pokemon.core.Team.TeamView;
 import edu.bu.pas.pokemon.linalg.Matrix;
 import edu.bu.pas.pokemon.core.enums.Type;
+import edu.bu.pas.pokemon.core.enums.Stat;
+import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
+import edu.bu.pas.pokemon.core.enums.Flag;
 
 public class CustomSensorArray
     extends SensorArray
@@ -28,14 +31,17 @@ public class CustomSensorArray
     //
     public CustomSensorArray()
     {
-        numFeatures = 29; // # of features
+        this.numFeatures = 0; // # of features, should be updated in getSensorValues().
     }
 
     //
     // GET/SET
     //
     public int getNumFeatures() {
-        return numFeatures;
+        return this.numFeatures;
+    }
+    public void setNumFeatures(int numFeatures) {
+        this.numFeatures = numFeatures;
     }
 
     //
@@ -63,7 +69,9 @@ public class CustomSensorArray
         addTeamFeatures(features, state.getTeam1View(), true); // Our team
         addTeamFeatures(features, state.getTeam2View(), false); // Their team
 
-        //making the row vector size of feature list
+        // Updates # of features
+        setNumFeatures(features.size());
+
         Matrix rowVector = Matrix.zeros(1, features.size());
         for (int i = 0; i < features.size(); i++) {
             rowVector.set(0, i, features.get(i));
@@ -77,20 +85,23 @@ public class CustomSensorArray
                         pokemon.getInitialStat(Stat.HP);
         features.add(hpRatio);
         
-        // status conditions
+        // Status conditions
         NonVolatileStatus status = pokemon.getNonVolatileStatus();
         features.add(status == NonVolatileStatus.SLEEP ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.POISON ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.BURN ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.PARALYSIS ? 1.0 : 0.0);
         features.add(status == NonVolatileStatus.FREEZE ? 1.0 : 0.0);
+        features.add(status == NonVolatileStatus.TOXIC ? 1.0 : 0.0);
         
-        // other statues (more unpreictable)
+        // Volatile statuses
         features.add(pokemon.getFlag(Flag.CONFUSED) ? 1.0 : 0.0);
         features.add(pokemon.getFlag(Flag.TRAPPED) ? 1.0 : 0.0);
         features.add(pokemon.getFlag(Flag.FLINCHED) ? 1.0 : 0.0);
+        features.add(pokemon.getFlag(Flag.FOCUS_ENERGY) ? 1.0 : 0.0);
+        features.add(pokemon.getFlag(Flag.SEEDED) ? 1.0 : 0.0);
         
-        // lv
+        // lv (normalized)
         features.add((double) pokemon.getLevel() / 100.0);
     }
 
@@ -98,23 +109,24 @@ public class CustomSensorArray
         // move prop.
         features.add(action.getPower() != null ? (double) action.getPower() / 200.0 : 0.0);
         features.add(action.getAccuracy() != null ? (double) action.getAccuracy() / 100.0 : 1.0);
-        features.add((double) action.getPP() / 40.0); // normalize PP
+        features.add((double) action.getPP() / 40.0); // Normalized PP
         features.add((double) action.getPriority());
+        features.add((double) action.getCriticalHitRatio());
         
-        // move category
+        // move categories
         features.add(action.getCategory() == Move.Category.PHYSICAL ? 1.0 : 0.0);
         features.add(action.getCategory() == Move.Category.SPECIAL ? 1.0 : 0.0);
         features.add(action.getCategory() == Move.Category.STATUS ? 1.0 : 0.0);
     }
 
     private void addTeamFeatures(List<Double> features, TeamView team, boolean isOurs) {
-        // # of alive pokemons
+        // # of alive pokemon
         int aliveCount = 0;
         for (int i = 0; i < team.size(); i++) {
             if (!team.getPokemonView(i).hasFainted()) {
                 aliveCount++;
             }
         }
-        features.add((double) aliveCount / 6.0); // normalized
+        features.add((double) aliveCount / 6.0); // Normalized
     }
 }
