@@ -110,6 +110,7 @@ public class CustomRewardFunction
         return score;
     }
 
+    // + modifier to reward, based on how much DMG dealth
     private double calculateDamageDealtReward(final BattleView state, final BattleView nextState) { 
         double reward = 0.0;
         
@@ -132,24 +133,138 @@ public class CustomRewardFunction
         return reward;
     }
     
+    // - modifier to reward, based on how much DMG taken
     private double calculateDamageTakenReward(final BattleView state, final BattleView nextState) { 
-        return 0d;
+        double penalty = 0.0;
+        
+        PokemonView myCurrent = state.getTeam1View().getActivePokemonView();
+        PokemonView myNext = nextState.getTeam1View().getActivePokemonView();
+        
+        if (myCurrent != null && myNext != null) {
+            int currentMyHP = myCurrent.getCurrentStat(Stat.HP);
+            int nextMyHP = myNext.getCurrentStat(Stat.HP);
+            int damageTaken = currentMyHP - nextMyHP;
+            
+            if (damageTaken > 0) {
+                // Penalty proportional to damage taken, normalized by max HP
+                double damageRatio = (double) damageTaken / myCurrent.getInitialStat(Stat.HP);
+                penalty -= damageRatio * 8.0;
+            }
+        }
+        
+        return penalty;
     }
     
+    // Variable modifier on reward, based on the status effects of the various pokemons in the game.
     private double calculateStatusEffectReward(final BattleView state, final BattleView nextState) {
-        return 0d;
+        double reward = 0.0;
+        
+        // Check + status effects on opponent
+        PokemonView theirCurrent = state.getTeam2View().getActivePokemonView();
+        PokemonView theirNext = nextState.getTeam2View().getActivePokemonView();
+        
+        if (theirCurrent != null && theirNext != null) {
+            // Reward for dealing - status on opponent
+            if (theirCurrent.getNonVolatileStatus() == NonVolatileStatus.NONE && 
+                theirNext.getNonVolatileStatus() != NonVolatileStatus.NONE) {
+                reward += 5.0; // Reward for dealing any status
+                
+                // Extra rewards for more dmging statuses
+                // Not too sure on how to weigh these, so I'll add my justifications below
+                switch (theirNext.getNonVolatileStatus()) {
+                    case SLEEP:
+                    case FREEZE:
+                        reward += 8.0; // prevents moves
+                        break;
+                    case PARALYSIS:
+                        reward += 6.0; // lose turn chance AND SPD reduction
+                        break;
+                    case TOXIC:
+                        reward += 4.0; // dmg over time (bad)
+                        break;
+                    case POISON:
+                    case BURN:
+                        reward += 3.0; // dmg over time (not as bad)
+                        break;
+                }
+            }
+            
+            // Penalty for - statuses on our pokemon
+            PokemonView myCurrent = state.getTeam1View().getActivePokemonView();
+            PokemonView myNext = nextState.getTeam1View().getActivePokemonView();
+            
+            if (myCurrent != null && myNext != null) {
+                if (myCurrent.getNonVolatileStatus() == NonVolatileStatus.NONE && 
+                    myNext.getNonVolatileStatus() != NonVolatileStatus.NONE) {
+                    reward -= 4.0; // Penalty for getting dealth some status effect at all
+                }
+            }
+        }
+        
+        return reward;
     }
     
+    // Variable modifier on rewards, based on how many pokemons we/they KO from resulting action
     private double calculateKOReward(final BattleView state, final BattleView nextState) { 
-        return 0d;
+        double reward = 0.0;
+        
+        PokemonView theirCurrent = state.getTeam2View().getActivePokemonView();
+        PokemonView theirNext = nextState.getTeam2View().getActivePokemonView();
+        
+        // Reward for KOing opponent's active pokemon
+        if (theirCurrent != null && theirNext != null) {
+            if (!theirCurrent.hasFainted() && theirNext.hasFainted()) {
+                reward += 25.0; // Big reward for KOing
+            }
+        }
+        
+        // Penalty for our active pokemons getting KOed
+        PokemonView myCurrent = state.getTeam1View().getActivePokemonView();
+        PokemonView myNext = nextState.getTeam1View().getActivePokemonView();
+        
+        if (myCurrent != null && myNext != null) {
+            if (!myCurrent.hasFainted() && myNext.hasFainted()) {
+                reward -= 20.0; // Penalty for getting KOe
+            }
+        }
+        
+        return reward;
     }
     
+    // Variable modifier, this is based on certain moves that are stragetically very good (based on the superEffective)
     private double calculateMoveEffectivenessReward(final BattleView state, final MoveView action, final BattleView nextState) { 
-        return 0d;
+        double reward = 0.0;
+        
+        // TODO: Work on fully implementing this
+        // Alex we'll need to calc the type effectiveness here
+        // Req some sort of type matchup logic
+        // From the javadocs, we could use the actual type effectiveness via Type.getEffectivenessModifier()
+        
+        // in prog heuristic for this function:
+        // Rewards using damaging moves
+        if (action.getPower() != null && action.getPower() > 0) {
+            reward += 0.5;
+        }
+                
+        return reward;
     }
     
+    // Variable modifier, will calc other misc. factors AND the inital state factors (the s in R(s, a, s'))
     private double calculateStrategicReward(final BattleView state, final BattleView nextState) { 
-        return 0d;
+        double reward = 0.0;
+        
+        TeamView myTeamNext = nextState.getTeam1View();
+        TeamView theirTeamNext = nextState.getTeam2View();
+        
+        // Reward for having more alive pokemon
+        int myAlive = countAlivePokemon(myTeamNext);
+        int theirAlive = countAlivePokemon(theirTeamNext);
+        reward += (myAlive - theirAlive) * 3.0;
+        
+        // Reward for having healthier team
+        reward += calculateTeamHealthDifferential(myTeamNext, theirTeamNext);
+        
+        return reward;
     }
 
     // Calc. the difference of health in my team vs their team.
