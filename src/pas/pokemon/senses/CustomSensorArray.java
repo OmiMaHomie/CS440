@@ -32,7 +32,7 @@ public class CustomSensorArray
     //
     public CustomSensorArray()
     {
-        this.numFeatures = 0; // # of features, should be updated in getSensorValues().
+        numFeatures = 0;
     }
 
     //
@@ -84,12 +84,6 @@ public class CustomSensorArray
     }
 
     private void addPokemonState(List<Double> features, PokemonView pokemon, boolean isOurs) {
-        if (pokemon == null) {
-            // 0 for everything if pokemon is null
-            addNullPokemonFeatures(features);
-            return;
-        }
-
         // HP
         double hpRatio = (double) pokemon.getCurrentStat(Stat.HP) / 
                         pokemon.getInitialStat(Stat.HP);
@@ -147,29 +141,7 @@ public class CustomSensorArray
         features.add(pokemon.getStatsUnchangeable() ? 1.0 : 0.0);
     }
 
-    private void addNullPokemonFeatures(List<Double> features) {
-        // Calc. total number of pokemon features and add zeros
-        int numStageMultipliers = 7;
-        int numHeightStatus = 3;
-        int numNonVolatileStatus = 7;
-        int numVolatileStatus = 5;
-        int numTypes = Type.values().length;
-        int numOtherFeatures = 3; // active move, substitute, stats unchangeable
-        int numBasicFeatures = 2; // HP and level
-        
-        int totalFeatures = numBasicFeatures + numStageMultipliers + numHeightStatus + numNonVolatileStatus + numVolatileStatus + numTypes + numOtherFeatures;
-        
-        for (int i = 0; i < totalFeatures; i++) {
-            features.add(0.0);
-        }
-    }
-
     private void addMoveFeatures(List<Double> features, BattleView state, MoveView action) {
-        if (action == null) {
-            addNullMoveFeatures(features);
-            return;
-        }
-
         // move prop.
         features.add(action.getPower() != null ? (double) action.getPower() / 200.0 : 0.0);
         features.add(action.getAccuracy() != null ? (double) action.getAccuracy() / 100.0 : 1.0);
@@ -201,22 +173,6 @@ public class CustomSensorArray
             features.add(effectiveness);
         } else {
             features.add(1.0); // Neutral effectiveness
-        }
-    }
-
-    private void addNullMoveFeatures(List<Double> features) {
-        // Calculate total number of move features and add zeros
-        int numBasicProperties = 5;
-        int numCategories = 3;
-        int numTypes = Type.values().length;
-        int numHeightRestrictions = 3;
-        int numEffectiveness = 1;
-        
-        int totalFeatures = numBasicProperties + numCategories + numTypes + 
-                           numHeightRestrictions + numEffectiveness;
-        
-        for (int i = 0; i < totalFeatures; i++) {
-            features.add(0.0);
         }
     }
 

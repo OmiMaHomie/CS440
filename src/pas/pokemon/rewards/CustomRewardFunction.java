@@ -89,7 +89,7 @@ public class CustomRewardFunction
         return Math.max(getLowerBound(), Math.min(getUpperBound(), reward));
     }
 
-    // Variable modified to rewards, based of if we won/lost the game
+    // based of if we won/lost the game
     private double calculateGameOutcomeReward(final BattleView state, final BattleView nextState) {
         if (!nextState.isOver()) return 0.0;
         
@@ -111,7 +111,7 @@ public class CustomRewardFunction
         }
     }
 
-    // Variable modifier, based on the # of allies/opponents KOed in current state
+    // based on the # of allies/opponents KOed in current state
     private double calculateKOReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -146,7 +146,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable modifier, based on the ratio of dmg dealth to dmg taken
+    // based on the ratio of dmg dealth to dmg taken
     private double calculateDamageExchangeReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -177,7 +177,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable modifier, based on the culminated status changes of enemies/allies
+    // based on the culminated status changes of enemies/allies
     private double calculateStatusEffectReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -268,7 +268,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable modifier, based on changes in stats.
+    // based on changes in stats.
     private double calculateStatChangeReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -323,7 +323,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable modifier, Based on move evaluation
+    // Based on move evaluation
     private double calculateStrategicMoveReward(final BattleView state, final MoveView action, final BattleView nextState) {
         double reward = 0.0;
         
@@ -374,7 +374,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable, based on resource management (the pokemons within the tem)
+    // based on resource management (the pokemons within the team)
     private double calculateResourceManagementReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -392,7 +392,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable, based on battlefield control 
+    // based on battlefield control 
     private double calculateBattlefieldControlReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -425,7 +425,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Variable modifier, based on maintaining the initative/momentum
+    // based on maintaining the initative/momentum
     private double calculateMomentumReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
         
@@ -441,7 +441,7 @@ public class CustomRewardFunction
         return reward;
     }
 
-    // Helper method
+    // Helper method for type effectiveness
     private double calculateTypeEffectiveness(Type moveType, Type defenderType1, Type defenderType2) {
         double effectiveness = 1.0;
         effectiveness *= Type.getEffectivenessModifier(moveType, defenderType1);
