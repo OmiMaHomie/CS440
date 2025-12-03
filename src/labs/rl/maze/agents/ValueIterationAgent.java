@@ -32,7 +32,7 @@ public class ValueIterationAgent
     extends StochasticAgent
 {
 
-    public static final double GAMMA = 0.1; // feel free to change this around!
+    public static final double GAMMA = 0.9; // feel free to change this around!
     public static final double EPSILON = 1e-6; // don't change this though
 
     private Map<Coordinate, Double> utilities;
@@ -71,7 +71,59 @@ public class ValueIterationAgent
 
     public void valueIteration(StateView state)
     {
-        // TODO
+        // init utils to 0
+        Map<Coordinate, Double> U = getZeroMap(state);
+        Map<Coordinate, Double> U_prime = new HashMap<>(U);
+        
+        // hit terminal state? then get the reward
+        U.put(POSITIVE_TERMINAL_STATE, RewardFunction.getReward(POSITIVE_TERMINAL_STATE));
+        U.put(NEGATIVE_TERMINAL_STATE, RewardFunction.getReward(NEGATIVE_TERMINAL_STATE));
+        U_prime.putAll(U);
+        
+        double e = EPSILON;
+        double g = GAMMA;
+        double threshold = e * (1 - g) / g;
+        double delta = Double.POSITIVE_INFINITY;
+
+        // System.out.println("epsilon = " + e);
+        // System.out.println("gamma = " + g);
+        // System.out.println("convergenceThreshold = " + threshold);
+
+        int iteration = 0;
+        
+        while (delta > threshold) {
+        delta = 0.0;
+        
+        for (Coordinate s : U.keySet()) {
+            if (isTerminalState(s)) continue;
+            
+            double maxExpectedUtility = Double.NEGATIVE_INFINITY;
+            
+            for (Direction action : TransitionModel.CARDINAL_DIRECTIONS) {
+                double expectedUtility = 0.0;
+                Set<Pair<Coordinate, Double>> transitions = 
+                    TransitionModel.getTransitionProbs(state, s, action);
+                
+                for (Pair<Coordinate, Double> transition : transitions) {
+                    expectedUtility += transition.getSecond() * U.get(transition.getFirst());
+                }
+                
+                maxExpectedUtility = Math.max(maxExpectedUtility, expectedUtility);
+            }
+            
+            double newUtility = RewardFunction.getReward(s) + g * maxExpectedUtility;
+            U_prime.put(s, newUtility);
+            delta = Math.max(delta, Math.abs(newUtility - U.get(s)));
+        }
+        
+            // Swap U for U prime
+            Map<Coordinate, Double> temp = U;
+            U = U_prime;
+            U_prime = temp;
+        }
+        
+        // After loop, U has the converged utils
+        setUtilities(U);
     }
 
     @Override
