@@ -138,11 +138,11 @@
         Consider a dataset $D$ with $M$ unique data points, $\{(x^{(i)}, y^{(i)})\}_{i=1}^{M}$. &
         Defining the set of all distinct data points. \\
         \\
-        Let $n_i$ be the frquency of the $i$-th unique point, so the total dataset size is $N = \sigma_{i=1}^{M}n_i$. &
+        Let $n_i$ be the frequency of the $i$-th unique point, so the total dataset size is $N = \sum_{i=1}^{M}n_i$. &
         A dataset with duplicates can be characterized by the counts $n_i$ of its unique points. \\
         \\
-        Stanard MSE loss over the full dataset: $L(\theta) = \frac{1}{2N} \sum_{j=1}^{N}(y^{(j)} - f_{\theta}(x^{(j)}))^2$. &
-        The is the real (canonical), unweighted loss, summing over every individual sample. \\
+        Standard MSE loss over the full dataset: $L(\theta) = \frac{1}{2N} \sum_{j=1}^{N}(y^{(j)} - f_{\theta}(x^{(j)}))^2$. &
+        The is the real (canonical) unweighted loss, summing over every individual sample. \\
         \\
         Regrouping the sum w/ unique points: $L(\theta) = \frac{1}{2N}\sum_{i=1}^{M}n_{i}(y^{(i)}-f_{\theta}(x^{(i)}))^2$. &
         Instead of summing over all $N$ samples, we instead sum over the $M$ unique points, with each point's error term multiploie by its count $n_i$. \\
@@ -170,18 +170,17 @@
         $L(\theta)=\frac{1}{2N}\sum_{i=1}^{N}r^{(i)}(y^{(i)}-f_{\theta}(x^{(i)}))^2$. &
         This is the given loss function with non-neg weights. \\
         \\
-        We define a function $p(x, y)$ over $X \times R$ as:
-        $p(x, y) = \sum_{j:(x^{(j)}, y^{(j)}) = (x, y)} r^{(j)}$,
-        and $p(x, y) = 0$ if $(x, y)$ is not in the dataset. &
-        $p(x, y)$ aggregates the total weight assigned to all data points with value $(x, y)$. For a point not in the dataset, its value weight is simply 0. \\
-        \\
+        We define a function $p(x, y)$ over $X \times \mathbb{R}$ as:
+        $p(x, y) = \sum_{\substack{j \\ (x^{(j)}, y^{(j)}) = (x, y)}} r^{(j)}$,
+        and $p(x, y) = 0$ if $(x, y) \notin D$. &
+        $p(x, y)$ aggregates the total weight assigned to all data points with value $(x, y)$. For a point not in the dataset, its weight is zero.        \\
         Original loss can be rewritten:
         $L(\theta) = \frac{1}{2N} \sum_{(x, y) \in X \times R} p(x, y) \cdot (y-f_{\theta}(x))^2$. &
         This new sum now iterates over all possible data points $(x, y)$. For any points not in the dataset, $p(x, y) = 0$, so it doesn't contribute to anything. For a point in the dataset, it contributes the sum of its weights $\cdot$ the squared error. \\
         \\
-        Since the ataset is finite, only finitely many terms in this sume are non-zero. &
-        Ensures the sum is well-defined and compuitationally tractable, even if $X$ ens up being infinite.
-    \end{answercols}
+        Since the dataset is finite, only finitely many terms in this sum are non-zero. &
+        This ensures the sum is well-defined and computationally tractable, even if $X$ is infinite. 
+        \end{answercols}
 
     \noindent $\therefore$ The loss over a finite, weighted dataset is equivalent to a weighted sum over all possible points, where the weight function, $p(x, y)$ is non-zero only on the dataset points.
 
@@ -191,14 +190,12 @@
 
     \begin{answercols}
         Points with weights $r^{(i)}$ contribute nothing to the loss function. &
-        In $L(\theta) = \frac{1}{2N} \sum_{i=1}^{N} r^{(i)}(y^{(i)} - f_{\theta}(x^{(i)}))^2$, whene $r^{(i)} = 0$, the entire term for that data point is zero, regardless of the model's error. \\
-        \\
+        In $L(\theta) = \frac{1}{2N} \sum_{i=1}^{N} r^{(i)}(y^{(i)} - f_{\theta}(x^{(i)}))^2$, when $r^{(i)} = 0$, the entire term for that data point is zero, regardless of the model's error. \\        \\
         They have no direct influence on the optimal solution $\theta^{*}$. &
         In the normal equation $\Phi^{T}R\Phi\theta = \Phi^{T}Ry$, rows corresponding to zero weights are multiplied by 0 in the diagnoal matrix $R$, effectively removing them from solving for $\theta^{*}$. \\
         \\
-        The moel provides no guarantees about performace on 0-weight points. &
-        The optimization process is uncertain to these points. The solution is determined entirely by points with $r^{(i)} > 0$. Performance on 0-weight points epends on inductive bias and correlation with trained points. \\
-        \\
+        The model provides no guarantees about performance on 0-weight points. &
+        The optimization process is insensitive to these points. The solution is determined entirely by points with $r^{(i)} > 0$. Performance on 0-weight points depends on inductive bias and correlation with trained points. \\        \\
         In RL, this then produces an issue: \textbf{states with 0 weight are unexplored, and their value estimates are untrained and are potentially arbitrary}. &
         If a policy never visits a state-action pair, it recieves 0 weight in the value function update. The estimate value for that state is not grounded in experience and could be inaccurate.
     \end{answercols}
@@ -320,6 +317,9 @@
         Let $U(\tau) = \max_{t} r_{t}$ be the utility of trajectory $\tau = (s_0, a_0, r_0, s_1, a_1, r_1, \ldots)$. &
         Given utility function based on maximum reward. \\
         \\
+        Preferences are stationary iff $\forall t, \tau_A \succeq \tau_B \iff \tau_A[t:] \succeq \tau_B[t:]$. &
+        Defining stationary preferences. \\
+        \\
         Consider 2 trajectories starting at time $t = 0$: 
         \begin{itemize}
             \item $\tau_{A}$ is rewards $= [0, 0, 5]$
@@ -368,23 +368,23 @@
     \noindent Now to prove if we can define the optimal behavior with maxmim reward utility.
 
     \begin{answercols}
-        Firstly, Bellman's principle of optimality would fail, as optimal policy from any state depends on rewards already observed. &
-        Is is a DP issue, due to the non-stationary preferences shown from the previous proof. \\
+        Since $U(\tau) = \max_t r_t$ violates the principle of optimality, thus the Bellman’s equation fails. &
+        Optimal decisions depend on $\max$ rewards already observed, breaking time consistency. \\
         \\
-        We can define an augmented state space $s' = (s, m)$ where $m$ tracks maximum rewards seen so far. &
-        Do state space expansion, making the problem Markovian again. \\
+        Define augmented state $\tilde{s} = (s, m)$ where $m = \max_{0 \leq k < t} r_k$. &
+        This makes the process Markovian, as $m$ tracks the current maximum reward. \\
         \\
-        A policy that maximizes the probability of achieve the highest possible rewars can be defined. &
-        Defining a Vlaue Function, as this is a well-defined optimization problem. \\
+        New objective: maximize probability that $m_{\text{final}} \geq \theta$ for some threshold $\theta$. &
+        Equivalent to $\mathbb{E}[ \mathbf{1}(m_T \geq \theta) ]$, where $m_T$ is final max reward. \\
         \\
-        $V(s, m) = \max_{a} \sum_{s'} T(s' | s, a) 1_{r \geq m} + V(s', \max(m, r))$. &
-        It is complex, but matematically it works out as a Bellman equation. \\
+        Define $V(s, m) = \max_a \mathbb{E}\big[ \mathbf{1}(r \geq m) + V(s', \max(m, r)) \big]$. &
+        This yields a well-defined Bellman equation in the augmented space. \\
         \\
-        It is possible to define utility as indicator $U(\tau) = 1_{\text{max reward in } \tau \geq \text{threshold}}$ and maximize the expected utility. &
-        Because of this possibility, we could yield a coherent objective. \\
+        More generally, define $U_{\theta}(\tau) = \mathbf{1}(\max_t r_t \geq \theta)$. &
+        Then $\pi^* = \arg\max_\pi \mathbb{E}_{\tau \sim \pi}[U_{\theta}(\tau)]$ is a valid objective. \\
         \\
-        However, this requires knowing the maximum achievable reward in advance OR solving a complex multi-objective problem. &
-        The optimization becomes much harder than a standard MDP.
+        However, $\theta$ must be known or optimized over, leading to a multi-objective problem. &
+        This is computationally harder than standard additive/discounted MDPs.
     \end{answercols}
 
     \noindent $\therefore$ While it is \textit{theoretically} possible to define optimal behavior for a maximum reward utility, the reuslting optimization problem would lose the recursive structure of standard MDPs and thusly becomes computationally challenging.
