@@ -19,11 +19,14 @@ import edu.bu.pas.pokemon.nn.layers.Sigmoid;
 
 // JAVA PROJECT IMPORTS
 import src.pas.pokemon.senses.CustomSensorArray;
+import java.util.Random;
+import java.util.List;
 
 
 public class PolicyAgent
     extends NeuralQAgent
 {
+    private final double EPSILON = 0.1; // we can fool around with this to find the optimal #
 
     public PolicyAgent()
     {
@@ -55,16 +58,25 @@ public class PolicyAgent
     @Override
     public Model initModel()
     {
-        // TODO: create your neural network
-
-        // currently this creates a one-hidden-layer network
+        // Getting input dimensions
+        CustomSensorArray sensorArray = (CustomSensorArray) this.getSensorArray();
+        
+        // Neural network
+        // TODO: WE GOTTA CHANGE THE ARCH. LATER (prolly)
         Sequential qFunction = new Sequential();
-        qFunction.add(new Dense(64, 128));
+        
+        // Input --> sensorArray.getNumFeatures() should be set after 1st call
+        // TODO: FIGURE OUT A WAY TO MAKE THE INPUT DYNAMIC (just guessing the size rn)
+        int inputSize = 128;
+        
+        qFunction.add(new Dense(inputSize, 256)); // 1st layer
+        qFunction.add(new ReLU());
+        qFunction.add(new Dense(256, 128));      // 2nd layer
         qFunction.add(new Tanh());
-        qFunction.add(new Dense(128, 1));
-
+        qFunction.add(new Dense(128, 1));        // output layer, which is the Q-val
+        
         return qFunction;
-    }
+        }
 
     @Override
     public Integer chooseNextPokemon(BattleView view)
@@ -97,6 +109,27 @@ public class PolicyAgent
 
         // HOW that randomness works and how often you do it are up to you, but it *will* affect the quality of your
         // learned model whether you do it or not!
+
+        // This code will do 2 things:
+        // Training --> explore (sometimes)
+        // Eval --> ALWAYS use learned policy
+        boolean isTraining = true; // to ensure we're tracking the 2 different states
+        
+        if (isTraining) {
+            // Epsilon-greedy exploration
+            double epsilon = EPSILON;
+            Random random = new Random();
+            
+            if (random.nextDouble() < epsilon) {
+                // choosees a rnd move
+                List<MoveView> moves = this.getPotentialMoves(view);
+                if (!moves.isEmpty()) {
+                    return moves.get(random.nextInt(moves.size()));
+                }
+            }
+        }
+        
+        // Uses the learned policy
         return this.argmax(view);
     }
 
