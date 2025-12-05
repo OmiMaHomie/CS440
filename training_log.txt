@@ -1,0 +1,17 @@
+[PolicyAgent] Initializing...
+[CustomSensorArray] Feature count: 120
+[CustomSensorArray] First 10 features: 
+  Feature 0: 1.0
+  Feature 1: 1.0
+  Feature 2: 0.0
+  Feature 3: 0.0
+  Feature 4: 0.0
+  Feature 5: 0.0
+  Feature 6: 0.0
+  Feature 7: 0.0
+  Feature 8: 0.0
+  Feature 9: 0.0
+after cycle=0 avg(utility)=-786.1339744243467 avg(num_wins)=0.0
+after cycle=1 avg(utility)=-212.53367409200806 avg(num_wins)=0.4
+after cycle=2 avg(utility)=-56.4676061988372 avg(num_wins)=0.3
+after cycle=3 avg(utility)=21.769793464687744 avg(num_wins)=0.5

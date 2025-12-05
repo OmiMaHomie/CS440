@@ -73,6 +73,16 @@ public class CustomSensorArray
 
         addBattleFeatures(features, state);
 
+        // DEBUG: Print feature count on first call
+        if (getNumFeatures() == 0) {
+            System.err.println("[CustomSensorArray] Feature count: " + features.size());
+            // Optional: print feature breakdown
+            System.err.println("[CustomSensorArray] First 10 features: ");
+            for (int i = 0; i < Math.min(10, features.size()); i++) {
+                System.err.println("  Feature " + i + ": " + features.get(i));
+            }
+        }
+
         // Updates # of features
         setNumFeatures(features.size());
 

@@ -15,18 +15,28 @@ import edu.bu.pas.pokemon.nn.layers.Dense; // fully connected layer
 import edu.bu.pas.pokemon.nn.layers.ReLU;  // some activations (below too)
 import edu.bu.pas.pokemon.nn.layers.Tanh;
 import edu.bu.pas.pokemon.nn.layers.Sigmoid;
+import edu.bu.pas.pokemon.core.Pokemon.PokemonView;
+import edu.bu.pas.pokemon.core.Team.TeamView;
+
+import edu.bu.pas.pokemon.core.enums.Stat;
+import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
+import edu.bu.pas.pokemon.core.enums.Type;
 
 
 // JAVA PROJECT IMPORTS
 import src.pas.pokemon.senses.CustomSensorArray;
 import java.util.Random;
 import java.util.List;
+import java.io.BufferedReader;  
+import java.io.InputStreamReader;
 
 
 public class PolicyAgent
     extends NeuralQAgent
 {
-    private final double EPSILON = 0.1; // we can fool around with this to find the optimal #
+    private boolean trainingMode = false;
+    private double explorationRate = 0.3; // Start high, decay over time
+    private int gamesPlayed = 0;
 
     public PolicyAgent()
     {
@@ -53,6 +63,8 @@ public class PolicyAgent
 
         // do what you want just don't expect custom command line options to be available
         // when I'm testing your code
+
+        System.err.println("[PolicyAgent] Initializing...");
     }
 
     @Override
@@ -67,7 +79,7 @@ public class PolicyAgent
         
         // Input --> sensorArray.getNumFeatures() should be set after 1st call
         // TODO: FIGURE OUT A WAY TO MAKE THE INPUT DYNAMIC (just guessing the size rn)
-        int inputSize = 128;
+        int inputSize = 120;
         
         qFunction.add(new Dense(inputSize, 256)); // 1st layer
         qFunction.add(new ReLU());
@@ -81,17 +93,108 @@ public class PolicyAgent
     @Override
     public Integer chooseNextPokemon(BattleView view)
     {
-        // TODO: change this to something more intelligent!
-
-        // find a pokemon that is alive
-        for(int idx = 0; idx < this.getMyTeamView(view).size(); ++idx)
-        {
-            if(!this.getMyTeamView(view).getPokemonView(idx).hasFainted())
-            {
-                return idx;
+        TeamView myTeam = this.getMyTeamView(view);
+        TeamView oppTeam = this.getOpponentTeamView(view);
+        PokemonView oppActive = oppTeam.getActivePokemonView();
+        
+        Integer bestIdx = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        
+        for (int idx = 0; idx < myTeam.size(); ++idx) {
+            PokemonView pokemon = myTeam.getPokemonView(idx);
+            
+            if (!pokemon.hasFainted()) {
+                double score = evaluatePokemonForSwitch(pokemon, oppActive);
+                
+                if (bestIdx == null || score > bestScore) {
+                    bestIdx = idx;
+                    bestScore = score;
+                }
             }
         }
-        return null;
+        
+        return bestIdx;
+    }
+
+    private double evaluatePokemonForSwitch(PokemonView myPokemon, PokemonView oppPokemon) {
+        double score = 0.0;
+        
+        // 1. Type advantage
+        score += calculateTypeMatchupScore(myPokemon, oppPokemon);
+        
+        // 2. Health percentage
+        double healthRatio = (double) myPokemon.getCurrentStat(Stat.HP) / 
+                            myPokemon.getInitialStat(Stat.HP);
+        score += healthRatio * 20.0;
+        
+        // 3. Avoid bringing in status-afflicted Pokémon
+        if (myPokemon.getNonVolatileStatus() != NonVolatileStatus.NONE) {
+            score -= 15.0;
+        }
+        
+        // 4. Prefer Pokémon with good stats
+        for (Stat stat : new Stat[]{Stat.ATK, Stat.DEF, Stat.SPD, Stat.SPATK, Stat.SPDEF}) {
+            score += myPokemon.getCurrentStat(stat) / 100.0;
+        }
+        
+        return score;
+    }
+
+    private double calculateTypeMatchupScore(PokemonView myPokemon, PokemonView oppPokemon) {
+        if (oppPokemon == null) return 0.0;
+        
+        double score = 0.0;
+        
+        // Check how our types fare against opponent's types
+        Type myType1 = myPokemon.getCurrentType1();
+        Type myType2 = myPokemon.getCurrentType2();
+        Type oppType1 = oppPokemon.getCurrentType1();
+        Type oppType2 = oppPokemon.getCurrentType2();
+        
+        // Calculate defensive advantage (how well we resist opponent's attacks)
+        if (oppType1 != null) {
+            if (myType1 != null) {
+                double effectiveness = Type.getEffectivenessModifier(oppType1, myType1);
+                if (effectiveness >= 2.0) score -= 10.0;  // We're weak
+                else if (effectiveness <= 0.5 && effectiveness > 0.0) score += 5.0; // We resist
+                else if (effectiveness == 0.0) score += 8.0; // We're immune
+            }
+            if (myType2 != null) {
+                double effectiveness = Type.getEffectivenessModifier(oppType1, myType2);
+                if (effectiveness >= 2.0) score -= 10.0;
+                else if (effectiveness <= 0.5 && effectiveness > 0.0) score += 5.0;
+                else if (effectiveness == 0.0) score += 8.0;
+            }
+        }
+        
+        if (oppType2 != null) {
+            if (myType1 != null) {
+                double effectiveness = Type.getEffectivenessModifier(oppType2, myType1);
+                if (effectiveness >= 2.0) score -= 10.0;
+                else if (effectiveness <= 0.5 && effectiveness > 0.0) score += 5.0;
+                else if (effectiveness == 0.0) score += 8.0;
+            }
+            if (myType2 != null) {
+                double effectiveness = Type.getEffectivenessModifier(oppType2, myType2);
+                if (effectiveness >= 2.0) score -= 10.0;
+                else if (effectiveness <= 0.5 && effectiveness > 0.0) score += 5.0;
+                else if (effectiveness == 0.0) score += 8.0;
+            }
+        }
+        
+        return score;
+    }
+    
+    @Override
+    public void train() {
+        this.trainingMode = true;
+        // Decay exploration rate as we play more games
+        explorationRate = Math.max(0.05, 0.3 * Math.exp(-gamesPlayed / 10000.0));
+    }
+
+    @Override
+    public void eval() {
+        this.trainingMode = false;
     }
 
     @Override
@@ -113,24 +216,41 @@ public class PolicyAgent
         // This code will do 2 things:
         // Training --> explore (sometimes)
         // Eval --> ALWAYS use learned policy
-        boolean isTraining = true; // to ensure we're tracking the 2 different states
-        
-        if (isTraining) {
-            // Epsilon-greedy exploration
-            double epsilon = EPSILON;
-            Random random = new Random();
-            
-            if (random.nextDouble() < epsilon) {
-                // choosees a rnd move
+        if (trainingMode && Math.random() < explorationRate) {
+                // Random exploration
                 List<MoveView> moves = this.getPotentialMoves(view);
                 if (!moves.isEmpty()) {
-                    return moves.get(random.nextInt(moves.size()));
+                    return moves.get(new Random().nextInt(moves.size()));
                 }
+            }
+            
+        return this.argmax(view);
+    }
+
+    @Override
+    public MoveView argmax(BattleView state) {
+        List<MoveView> moves = getPotentialMoves(state);
+        MoveView bestMove = null;
+        double bestQValue = Double.NEGATIVE_INFINITY;
+        
+        for (MoveView move : moves) {
+            // Use transition model if available
+            double qValue = evaluateMoveWithTransition(state, move);
+            
+            if (qValue > bestQValue) {
+                bestQValue = qValue;
+                bestMove = move;
             }
         }
         
-        // Uses the learned policy
-        return this.argmax(view);
+        return bestMove;
+    }
+
+    private double evaluateMoveWithTransition(BattleView state, MoveView move) {
+        // If you want to implement transition model usage
+        // This would consider probabilities from getPotentialEffects()
+        // For now, use the neural network
+        return this.eval(state, move);
     }
 
     @Override
