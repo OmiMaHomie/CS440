@@ -119,20 +119,20 @@ public class PolicyAgent
     private double evaluatePokemonForSwitch(PokemonView myPokemon, PokemonView oppPokemon) {
         double score = 0.0;
         
-        // 1. Type advantage
+        // Type ADV.
         score += calculateTypeMatchupScore(myPokemon, oppPokemon);
         
-        // 2. Health percentage
+        // HP %
         double healthRatio = (double) myPokemon.getCurrentStat(Stat.HP) / 
                             myPokemon.getInitialStat(Stat.HP);
         score += healthRatio * 20.0;
         
-        // 3. Avoid bringing in status-afflicted Pokémon
+        // Avoid injured or status-affected pokemons
         if (myPokemon.getNonVolatileStatus() != NonVolatileStatus.NONE) {
             score -= 15.0;
         }
         
-        // 4. Prefer Pokémon with good stats
+        // Get pokemons w/ goot effects
         for (Stat stat : new Stat[]{Stat.ATK, Stat.DEF, Stat.SPD, Stat.SPATK, Stat.SPDEF}) {
             score += myPokemon.getCurrentStat(stat) / 100.0;
         }
@@ -151,7 +151,7 @@ public class PolicyAgent
         Type oppType1 = oppPokemon.getCurrentType1();
         Type oppType2 = oppPokemon.getCurrentType2();
         
-        // Calculate defensive advantage (how well we resist opponent's attacks)
+        // Calculate DEF ADV. (how well we resist opponent's attacks)
         if (oppType1 != null) {
             if (myType1 != null) {
                 double effectiveness = Type.getEffectivenessModifier(oppType1, myType1);
@@ -247,9 +247,7 @@ public class PolicyAgent
     }
 
     private double evaluateMoveWithTransition(BattleView state, MoveView move) {
-        // If you want to implement transition model usage
-        // This would consider probabilities from getPotentialEffects()
-        // For now, use the neural network
+        // Not properly implemented yet.
         return this.eval(state, move);
     }
 
