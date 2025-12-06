@@ -1,0 +1,2 @@
+dexIdx,level,move1,move2,move3,move4,hpIV,atkIV,defIV,spdIV,spatkIV,spdefIV,hpEV,atkEV,defEV,spdEV,spatkEV,spdefEV
+1,5,Razor Leaf,Growl,Vine Whip,Tackle,1,1,1,1,1,1,1,1,1,1,1,1

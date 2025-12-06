@@ -1,0 +1,2 @@
+dexIdx,level,move1,move2,move3,move4,hpIV,atkIV,defIV,spdIV,spatkIV,spdefIV,hpEV,atkEV,defEV,spdEV,spatkEV,spdefEV
+95,5,Tackle,null,null,null,1,1,1,1,1,1,1,1,1,1,1,1

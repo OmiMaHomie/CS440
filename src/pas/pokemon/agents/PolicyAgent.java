@@ -45,7 +45,7 @@ public class PolicyAgent
 
     public void initializeSenses(Namespace args)
     {
-        SensorArray modelSenses = new CustomSensorArray();
+        SensorArray modelSenses = new CustomSensorArray(this);
 
         this.setSensorArray(modelSenses);
     }
@@ -79,7 +79,7 @@ public class PolicyAgent
         
         // Input --> sensorArray.getNumFeatures() should be set after 1st call
         // TODO: FIGURE OUT A WAY TO MAKE THE INPUT DYNAMIC (just guessing the size rn)
-        int inputSize = 120;
+        int inputSize = 9;
         
         qFunction.add(new Dense(inputSize, 256)); // 1st layer
         qFunction.add(new ReLU());
@@ -115,7 +115,6 @@ public class PolicyAgent
         
         return bestIdx;
     }
-
     private double evaluatePokemonForSwitch(PokemonView myPokemon, PokemonView oppPokemon) {
         double score = 0.0;
         

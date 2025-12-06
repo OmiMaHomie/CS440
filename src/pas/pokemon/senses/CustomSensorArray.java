@@ -1,5 +1,6 @@
 package src.pas.pokemon.senses;
 
+import java.security.Policy;
 // SYSTEM IMPORTS
 import java.util.ArrayList;
 import java.util.List;
@@ -13,26 +14,28 @@ import edu.bu.pas.pokemon.core.Move.MoveView;
 import edu.bu.pas.pokemon.core.Pokemon.PokemonView;
 import edu.bu.pas.pokemon.core.Team.TeamView;
 import edu.bu.pas.pokemon.linalg.Matrix;
+import src.pas.pokemon.agents.PolicyAgent;
 import edu.bu.pas.pokemon.core.enums.Type;
 import edu.bu.pas.pokemon.core.enums.Stat;
 import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
 import edu.bu.pas.pokemon.core.enums.Flag;
 import edu.bu.pas.pokemon.core.enums.Height;
-
 public class CustomSensorArray
     extends SensorArray
 {
+   
     //
     // FIELDS
     //
+    PolicyAgent agent;
     int numFeatures;
 
     //
     // CONSTRUCTOR(S)
     //
-    public CustomSensorArray()
-    {
-        numFeatures = 0;
+     public CustomSensorArray(PolicyAgent agent) { //This fixed it! I needed to include the agent to know which team it is on. Because gradescope showing won first 25 but lost other 25 wierd.
+        numFeatures = 0; 
+        this.agent = agent; // the actual agent playing the battle
     }
 
     //
@@ -53,6 +56,37 @@ public class CustomSensorArray
         // you want your neural network to have. This method should be called if your model is a q-based model
         // currently returns 64 random numbers
     // Gets all vals that MIGHT be used for calculcating util. val, and put into an array.
+
+
+    public Matrix getSensorValues(final BattleView state, final MoveView action) {
+
+        //Commented out below is a getSensorValules which is much more in depth with many many values, 
+        // but this just focuses on move stats, category, and effectiveness rather than trying to do too many things at once
+        TeamView myTeam = agent.getMyTeamView(state);
+        TeamView opponentTeam = agent.getOpponentTeamView(state);
+        List<Double> features = new ArrayList<>();
+
+        PokemonView ours = myTeam.getActivePokemonView();
+        PokemonView theirs = opponentTeam.getActivePokemonView();
+        features.add((double) ours.getCurrentStat(Stat.ATK) / 200.0); //small vals making it all within a small range
+        features.add((double) ours.getCurrentStat(Stat.SPATK) / 200.0);
+        features.add((double) ours.getCurrentStat(Stat.SPD) / 200.0);
+        features.add((double) theirs.getCurrentStat(Stat.DEF) / 200.0);
+        features.add((double) theirs.getCurrentStat(Stat.SPDEF) / 200.0);
+        features.add(action.getPower() != null ? action.getPower() / 200.0 : 0.0);
+        features.add(action.getCategory() == Move.Category.PHYSICAL ? 1.0 : 0.0); //doing physical special not status for this simple
+        features.add(action.getCategory() == Move.Category.SPECIAL  ? 1.0 : 0.0);
+        double overallTypeEffectiveness = calculateTypeEffectiveness(action.getType(),theirs.getCurrentType1(), theirs.getCurrentType2());
+        features.add(overallTypeEffectiveness);
+         // Updates # of features
+        setNumFeatures(features.size());
+        Matrix rowVector = Matrix.zeros(1, features.size());
+        for (int i = 0; i < features.size(); i++) {
+            rowVector.set(0, i, features.get(i));
+        }
+        return rowVector;
+    }
+    /*
     public Matrix getSensorValues(final BattleView state, final MoveView action)
     {
         // We will collect 4 main types of info:
@@ -78,7 +112,7 @@ public class CustomSensorArray
             System.err.println("[CustomSensorArray] Feature count: " + features.size());
             // Optional: print feature breakdown
             System.err.println("[CustomSensorArray] First 10 features: ");
-            for (int i = 0; i < Math.min(10, features.size()); i++) {
+            for (int i = 0; i < Math.min(120, features.size()); i++) {
                 System.err.println("  Feature " + i + ": " + features.get(i));
             }
         }
@@ -92,6 +126,7 @@ public class CustomSensorArray
         }
         return rowVector;
     }
+     */
 
     private void addPokemonState(List<Double> features, PokemonView pokemon, boolean isOurs) {
         // HP
@@ -185,7 +220,6 @@ public class CustomSensorArray
             features.add(1.0); // Neutral effectiveness
         }
     }
-
     private double calculateTypeEffectiveness(Type moveType, Type defenderType1, Type defenderType2) {
         double effectiveness = 1.0;
         
