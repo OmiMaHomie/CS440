@@ -1,5 +1,6 @@
 package src.pas.pokemon.rewards;
 
+import java.security.Policy;
 // SYSTEM IMPORTS
 import java.util.List;
 
@@ -15,6 +16,7 @@ import edu.bu.pas.pokemon.core.enums.NonVolatileStatus;
 import edu.bu.pas.pokemon.core.enums.Flag;
 import edu.bu.pas.pokemon.core.enums.Type;
 import edu.bu.pas.pokemon.core.enums.Height;
+import src.pas.pokemon.agents.PolicyAgent;
 
 public class CustomRewardFunction
     extends RewardFunction
@@ -59,33 +61,29 @@ public class CustomRewardFunction
 
         // This function is essentially the culmination of a bunch of various checks and rewards.
 
+        /* */
         // Win or lose?
+        /*
         reward += calculateGameOutcomeReward(state, nextState);
-        
         // KO modifier
         reward += calculateKOReward(state, nextState);
-        
         // DMG exchange
         reward += calculateDamageExchangeReward(state, nextState);
-        
         // Status effect dynamics
         reward += calculateStatusEffectReward(state, nextState);
-        
         // Stat change (dis)advantage
         reward += calculateStatChangeReward(state, nextState);
-        
         // Type effectiveness, move strat
         reward += calculateStrategicMoveReward(state, action, nextState);
         
         // Team & resource maangement
         reward += calculateResourceManagementReward(state, nextState);
-        
         // Positionality, battlefield dynamics
         reward += calculateBattlefieldControlReward(state, nextState);
-        
         // Calculates progressive (dis)advantage
         reward += calculateMomentumReward(state, nextState);
-        
+         */
+        reward += calculateRewardSimpleType(state, action);
         return Math.max(getLowerBound(), Math.min(getUpperBound(), reward));
     }
 
@@ -105,9 +103,9 @@ public class CustomRewardFunction
         }
         
         if (weWon) {
-            return 100.0; // Big win reward
+            return 60.0; // Big win reward
         } else {
-            return -100.0; // Big loss penalty
+            return -60.0; // Big loss penalty
         }
     }
 
@@ -121,7 +119,7 @@ public class CustomRewardFunction
         // Reward for KOing opponent
         if (theirCurrent != null && theirNext != null &&
             !theirCurrent.hasFainted() && theirNext.hasFainted()) {
-            reward += 40.0; // Significant reward for KO
+            reward += 15.0; // Significant reward for KO
             
             // If we KOed without taking much dmg, award even more
             PokemonView myCurrent = state.getTeam1View().getActivePokemonView();
@@ -129,7 +127,7 @@ public class CustomRewardFunction
             if (myCurrent != null && myNext != null) {
                 double healthRemaining = (double) myNext.getCurrentStat(Stat.HP) / myCurrent.getInitialStat(Stat.HP);
                 if (healthRemaining > 0.7) {
-                    reward += 15.0; // Clean KO
+                    reward += 8.0; // Clean KO
                 }
             }
         }
@@ -166,11 +164,11 @@ public class CustomRewardFunction
             
             // dmg efficency
             double netDamageEfficiency = damageDealtRatio - damageTakenRatio;
-            reward += netDamageEfficiency * 25.0;
+            reward += netDamageEfficiency * 5.0;
             
             // give a bonus for big dmg dealers WITH low dmg taken
             if (damageDealt > 0 && damageDealtRatio > 0.3) { 
-                reward += 5.0;
+                reward += 2.0;
             }
         }
         
@@ -268,6 +266,21 @@ public class CustomRewardFunction
         return reward;
     }
 
+    private double calculateRewardSimpleType(BattleView state, MoveView action) { //Not using the other one's focusing on simple espcially for first matchup
+        TeamView opponentTeam = state.getTeamView(1); //may have to fix but seems to be fine. I had to change custom sensory array to include the oppenent and my view
+        if (action == null || action.getPower() == null || action.getPower() <= 0) //basically not considering moves that dont have power attributes just want to hit hard with type effectiveness should especially be good bulba vs onix / geo
+            return 0.0;
+
+        PokemonView opponentPokemon = opponentTeam.getActivePokemonView();
+        if (opponentPokemon == null) { //making sure not null
+            return 0.0;
+        }
+        double power = action.getPower();
+        double typeEffectiveness = calculateTypeEffectiveness(action.getType(), opponentPokemon.getCurrentType1(), opponentPokemon.getCurrentType2()); //just getting effectiveness very important for easy because have 2 moves very strong
+        double result = power * typeEffectiveness;
+        return result;
+    }
+
     // based on changes in stats.
     private double calculateStatChangeReward(final BattleView state, final BattleView nextState) {
         double reward = 0.0;
@@ -339,9 +352,9 @@ public class CustomRewardFunction
                     opponent.getCurrentType1(), opponent.getCurrentType2());
                 
                 if (effectiveness >= 4.0) {
-                    reward += 15.0; // 4x super effective
+                    reward += 40.0; // 4x super effective very important for first game with bulbasour
                 } else if (effectiveness >= 2.0) {
-                    reward += 8.0; // 2x super effective
+                    reward += 30.0; // 2x super effective
                 } else if (effectiveness <= 0.5 && effectiveness > 0.0) {
                     reward -= 4.0; // Not very effective
                 } else if (effectiveness == 0.0) {
@@ -384,7 +397,7 @@ public class CustomRewardFunction
         // Alive pokemon differential
         int myAlive = countAlivePokemon(myTeamNext);
         int theirAlive = countAlivePokemon(theirTeamNext);
-        reward += (myAlive - theirAlive) * 8.0;
+        reward += (myAlive - theirAlive) * 2.0;
         
         // Team health advantage
         reward += calculateTeamHealthDifferential(myTeamNext, theirTeamNext);

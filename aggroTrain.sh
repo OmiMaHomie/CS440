@@ -5,7 +5,7 @@ echo "Starting training..."
 echo "===================="
 
 java -cp "./lib/*:." edu.bu.pas.pokemon.Train \
-    edu.bu.pas.pokemon.agents.RandomAgent \
+    edu.bu.pas.pokemon.agents.AggroAgent \
     --numCycles 1000 \
     --numTrainingGames 50 \
     --numEvalGames 10 \

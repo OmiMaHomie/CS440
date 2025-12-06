@@ -45,7 +45,7 @@ public class PolicyAgent
 
     public void initializeSenses(Namespace args)
     {
-        SensorArray modelSenses = new CustomSensorArray();
+        SensorArray modelSenses = new CustomSensorArray(this);
 
         this.setSensorArray(modelSenses);
     }
@@ -79,7 +79,7 @@ public class PolicyAgent
         
         // Input --> sensorArray.getNumFeatures() should be set after 1st call
         // TODO: FIGURE OUT A WAY TO MAKE THE INPUT DYNAMIC (just guessing the size rn)
-        int inputSize = 120;
+        int inputSize = 9;
         
         qFunction.add(new Dense(inputSize, 256)); // 1st layer
         qFunction.add(new ReLU());
@@ -115,7 +115,6 @@ public class PolicyAgent
         
         return bestIdx;
     }
-
     private double evaluatePokemonForSwitch(PokemonView myPokemon, PokemonView oppPokemon) {
         double score = 0.0;
         
@@ -127,12 +126,12 @@ public class PolicyAgent
                             myPokemon.getInitialStat(Stat.HP);
         score += healthRatio * 20.0;
         
-        // 3. Avoid bringing in status-afflicted Pokémon
+        // 3. Avoid bringing in status-afflicted Pokemon
         if (myPokemon.getNonVolatileStatus() != NonVolatileStatus.NONE) {
             score -= 15.0;
         }
         
-        // 4. Prefer Pokémon with good stats
+        // 4. Prefer Pokemon with good stats
         for (Stat stat : new Stat[]{Stat.ATK, Stat.DEF, Stat.SPD, Stat.SPATK, Stat.SPDEF}) {
             score += myPokemon.getCurrentStat(stat) / 100.0;
         }
